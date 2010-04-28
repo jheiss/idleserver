@@ -22,11 +22,12 @@ class IdleServer
     # Gather all metrics and report them to the server
     def report
       # FIXME
-      p recent_logins
+      p logins
+      p processes
     end
     
-    def recent_logins
-      recents = []
+    def logins
+      logins = []
       mostrecent = nil
       
       # FIXME: these should be user configurable
@@ -90,11 +91,11 @@ class IdleServer
           # Parse the timestamp
           time = Time.local(year, mon, mday)
           # A sanity check
-          abort if time.strftime('%a') != wday
+          warn "Time sanity check failed for #{timestamp}, #{year}" if time.strftime('%a') != wday
           # Now we can finally check and see if this login is recent
           if time >= threshtime
             puts "Login is recent, storing it" if @debug
-            recents << line
+            logins << line
             if !mostrecent || time > mostrecent
               puts "Login is most recent, updating most recent to #{time}" if @debug
               mostrecent = time
@@ -110,12 +111,12 @@ class IdleServer
       # two months ago.
       # Map number of recent logins onto 0..50
       idleness_count = 50
-      if recents.size > 0 && recents.size < 10
+      if logins.size > 0 && logins.size < 10
         idleness_count = 25
-      elsif recents.size >= 10
+      elsif logins.size >= 10
         idleness_count = 0
       end
-      puts "Login count is #{recents.size}" if @debug
+      puts "Login count is #{logins.size}" if @debug
       puts "Idleness based on login count is #{idleness_count}" if @debug
       # Map most recent login onto 0..50
       idleness_recent = 50
@@ -128,10 +129,76 @@ class IdleServer
       idleness = idleness_count + idleness_recent
       puts "Total idleness is #{idleness}" if @debug
       
-      [idleness, recents.join("\n")]
+      [idleness, logins.join("\n")]
     end
     
     def processes
+      processes = []
+      mostrecent = nil
+      
+      # FIXME: these should be user configurable
+      ignored_processes = {
+        'root' => ['init', 'migration/0', 'ksoftirqd/0', 'watchdog/0',
+                   'events/0', 'khelper', 'kthread', 'xenwatch', 'xenbus',
+                   'kblockd/0', 'cqueue/0', 'khubd', 'kseriod', 'kswapd0',
+                   'aio/0', 'kpsmoused', 'kstriped', 'kjournald', 'kauditd',
+                   'udevd', 'kmpathd/0', 'kmpath_handlerd', 'auditd',
+                   'audispd', 'rpciod/0', 'rpc.statd', 'nscd', 'master',
+                   'snmpd', 'sshd', 'crond', 'atd', 'automount', 'syslogd',
+                   'klogd', 'pdflush', 'gmond', 'dhclient', 'smartd',
+                   'mingetty', 'agetty',
+                   'splunkd', 'opsdb_cron_wrap', 'etch_cron_wrapp'],
+        'rpc' => ['portmap'],
+        'dbus' => ['dbus-daemon'],
+        'ntp' => ['ntpd'],
+        'postfix' => ['pickup', 'qmgr'],
+      }
+      IO.popen('ps -eo user,pid,cputime,comm,lstart,args') do |pipe|
+        pipe.each do |line|
+          user, pid, cputime, comm,
+            lstartwday, lstartmon, lstartmday, lstarttime, lstartyear,
+            args = line.split(' ', 10)
+          line.chomp!
+          puts "Processing line from ps:" if @debug
+          p line if @debug
+          if user == 'USER'
+            puts "Skipping header line" if @debug
+            next
+          end
+          if ignored_processes[user] &&
+             ignored_processes[user].include?(comm)
+            puts "Skipping ignored process #{user}, #{comm}" if @debug
+            next
+          end
+          # Parse cputime
+          # Format, according to ps(1): [dd-]hh:mm:ss
+          cputimesec = 0
+          if cputime =~ /^(\d\d)-/
+            cpudays = $1
+            cputime.sub!(/^\d\d-/, '')
+            cputimesec += cpudays * 24 * 60 * 60
+          end
+          cpuhours, cpumins, cpusecs = cputime.split(':')
+          cputimesec += cpuhours.to_i * 60 * 60
+          cputimesec += cpumins.to_i * 60
+          cputimesec += cpusecs.to_i
+          puts "cputime #{cputime} parsed to #{cputimesec} seconds" if @debug
+          # Parse lstart
+          lstarthours, lstartmins, lstartsecs = lstarttime.split(':')
+          lstart = Time.local(lstartyear, lstartmon, lstartmday, lstarthours, lstartmins, lstartsecs)
+          lstartstring = "#{lstartwday} #{lstartmon} #{lstartmday} #{lstarttime} #{lstartyear}"
+          puts "lstart #{lstartstring} parsed to #{lstart}" if @debug
+          # A sanity check
+          warn "lstart sanity check failed for #{lstartstring}" if lstart.strftime('%a') != lstartwday
+          # Save
+          processes << {:line => line, :user => user, :cputime => cputimesec, :lstart => lstart}
+        end
+        
+        # Calculate idleness
+        idleness = 0
+        
+        [idleness, processes.select{|p| p[:line]}.join("\n")]
+      end
     end
     
     def cpu
