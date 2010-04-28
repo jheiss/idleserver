@@ -1,0 +1,35 @@
+#!/usr/bin/ruby -w
+##############################################################################
+# Idle server agent
+# Copyright 2010 AT&T Interactive
+# http://idleserver.sourceforge.net/
+# License: MIT (http://www.opensource.org/licenses/mit-license.php)
+##############################################################################
+
+# Allow users to run this executable from within the source control tree
+$:.unshift File.join(File.dirname(__FILE__), "..", "lib")
+
+require 'optparse'
+require 'idleserver'
+
+@agentoptions = {}
+
+opts = OptionParser.new(nil, 24, '  ')
+opts.banner = 'Usage: idleserver [options]'
+opts.on('--debug', 'Print lots of messages about what is happening') do |opt|
+  @agentoptions[:debug] = opt
+end
+opts.on('--version', 'Show idleserver version') do |opt|
+  puts IdleServer::Agent::VERSION
+  exit
+end
+opts.on_tail("-h", "--help", "Show this message") do
+  puts opts
+  exit
+end
+
+leftovers = opts.parse(ARGV)
+
+idleagent = IdleServer::Agent.new(@agentoptions)
+idleagent.report
+
