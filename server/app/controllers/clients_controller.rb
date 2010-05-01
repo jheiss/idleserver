@@ -3,7 +3,9 @@ class ClientsController < ApplicationController
   # GET /clients.xml
   def index
     @clients = Client.all
-
+    
+    # FIXME: need to support queries by name
+    
     respond_to do |format|
       format.html # index.html.erb
       format.xml  { render :xml => @clients }
