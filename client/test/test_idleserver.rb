@@ -13,7 +13,7 @@ class AgentTests < Test::Unit::TestCase
     output = nil
     # The File.join(blah) is roughly equivalent to '../bin/idleserver'
     parentdir = File.dirname(File.dirname(__FILE__))
-    IO.popen("ruby -I #{File.join(parentdir, 'lib')} #{File.join(parentdir, 'bin', 'idleserver')} --help") do |pipe|
+    IO.popen("ruby #{File.join(parentdir, 'bin', 'idleserver')} --help") do |pipe|
       output = pipe.readlines
     end
     # Make sure at least something resembling help output is there
@@ -31,5 +31,24 @@ class AgentTests < Test::Unit::TestCase
     idleagent = IdleServer::Agent.new
     assert_equal(false, idleagent.debug)
   end
+  
+  def test_logins
+    idleagent = IdleServer::Agent.new
+    logins = idleagent.logins
+    assert_equal('logins', logins[:name])
+    assert_operator(logins[:idleness], :>=, 0)
+    assert_operator(logins[:idleness], :<=, 100)
+    assert_kind_of(String, logins[:message])
+  end
+  
+  def test_processes
+    idleagent = IdleServer::Agent.new
+    processes = idleagent.processes
+    assert_equal('processes', processes[:name])
+    assert_operator(processes[:idleness], :>=, 0)
+    assert_operator(processes[:idleness], :<=, 100)
+    assert_kind_of(String, processes[:message])
+  end
+  
 end
 
