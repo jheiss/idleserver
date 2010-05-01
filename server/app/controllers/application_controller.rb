@@ -6,4 +6,9 @@ class ApplicationController < ActionController::Base
 
   # Scrub sensitive parameters from your log
   # filter_parameter_logging :password
+
+  # Turn on the exception_notification plugin
+  # See environment.rb for the email address(s) to which exceptions are mailed
+  include ExceptionNotifiable
+
 end
