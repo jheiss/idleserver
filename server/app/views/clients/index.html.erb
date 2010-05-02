@@ -15,9 +15,9 @@
     <thead>
       <tr>
         <th nowrap="nowrap" width="5%">&nbsp;</th>
-        <th <%= sort_td_class_helper "client" %> > <%= sort_link_helper "Client", "client" %></th>
-        <th <%= sort_td_class_helper "idleness" %> > <%= sort_link_helper "Idleness", "idleness" %></th>
-        <th <%= sort_td_class_helper "updated_at" %> > <%= sort_link_helper "Last Update", "updated_at" %></th>
+        <th><%= order @search, :by => :name %></th>
+        <th><%= order @search, :by => :idleness %></th>
+        <th><%= order @search, :by => :updated_at %></th>
       </tr>
     </thead>
     <tbody>

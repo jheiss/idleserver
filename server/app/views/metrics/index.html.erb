@@ -6,11 +6,11 @@
   <thead>
     <tr>
       <th nowrap="nowrap" width="5%">&nbsp;</th>
-      <th <%= sort_td_class_helper "client" %> > <%= sort_link_helper "Client", "client" %></th>
-      <th <%= sort_td_class_helper "name" %> > <%= sort_link_helper "Name", "name" %></th>
-      <th <%= sort_td_class_helper "created_at" %> > <%= sort_link_helper "Time", "created_at" %></th>
-      <th <%= sort_td_class_helper "idleness" %> > <%= sort_link_helper "Idleness", "idleness" %></th>
-      <th <%= sort_td_class_helper "message_size" %> > <%= sort_link_helper "Message Size", "message_size" %></th>
+      <th><%= order @search, :by => :client %></th>
+      <th><%= order @search, :by => :name %></th>
+      <th><%= order @search, :by => :idleness %></th>
+      <th><%= order @search, :by => :updated_at %></th>
+      <th>Message Size</th>
     </tr>
   </thead>
   <tbody>
@@ -19,8 +19,8 @@
       <td nowrap="nowrap" width="5%"><%= link_to 'View', metric_path(metric) %></td>
       <td><%= metric.client.name %></td>
       <td><%= metric.name %></td>
-      <td><%= metric.created_at %></td>
       <td><%= metric.idleness %></td>
+      <td><%= metric.updated_at %></td>
       <td><%= metric.message.length %></td>
     </tr>
     <%- end -%>

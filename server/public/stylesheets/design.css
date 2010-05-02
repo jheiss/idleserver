@@ -107,22 +107,6 @@ table.styled
 table.styled th,
 table.styled td { padding: 0.3em 1em; }
 
-table.styled th.sortup
-{
-	background-color: #666;
-	background-image: url(/images/down_arrow.png);
-	background-position: top right;
-	background-repeat: no-repeat;
-}
-
-table.styled th.sortdown 
-{ 
-	background-color: #666;
-	background-image: url(/images/up_arrow.png);
-	background-position: top right;
-	background-repeat: no-repeat;
-}
-
 table.styled caption
 {
 	font-size: 1.3em;
@@ -139,11 +123,10 @@ table.styled thead
 }
 
 table.styled thead a { color: #fff; }
-table.styled thead th.sortup a,
-table.styled thead th.sortdown a
+table.styled thead th a.ascending,
+table.styled thead th a.descending
 {
 	color: #fff;
-	background-color: #666;
 }
 
 

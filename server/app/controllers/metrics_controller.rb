@@ -2,10 +2,12 @@ class MetricsController < ApplicationController
   # GET /metrics
   # GET /metrics.xml
   def index
-    @metrics = Metric.paginate(:all,
-                               :page => params[:page])
+    # Client's requesting XML get no pagination (all entries)
+    per_page = Metric.per_page # will_paginate's default value
+    respond_to { |format| format.html {}; format.xml { per_page = Integer::MAX } }
     
-    # FIXME: need to support queries by client_id
+    @search = Metric.search(params[:search])
+    @metrics = @search.paginate(:page => params[:page], :per_page => per_page)
     
     respond_to do |format|
       format.html # index.html.erb
