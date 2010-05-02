@@ -2,7 +2,8 @@ class ClientsController < ApplicationController
   # GET /clients
   # GET /clients.xml
   def index
-    @clients = Client.all
+    @clients = Client.paginate(:all,
+                               :page => params[:page])
     
     # FIXME: need to support queries by name
     

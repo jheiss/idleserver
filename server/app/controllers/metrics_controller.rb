@@ -2,7 +2,8 @@ class MetricsController < ApplicationController
   # GET /metrics
   # GET /metrics.xml
   def index
-    @metrics = Metric.all
+    @metrics = Metric.paginate(:all,
+                               :page => params[:page])
     
     # FIXME: need to support queries by client_id
     
