@@ -1,3 +1,22 @@
+<%- @page_title = "Metric" %>
 
-<%= link_to 'Edit', edit_metric_path(@metric) %> |
-<%= link_to 'Back', metrics_path %>
+<div class="record_view">
+
+<h1>Metric</h1>
+
+<p>
+  <strong>Client:</strong>  <%= link_to(h(@metric.client.name), client_path(@metric.client)) %><br />
+  <strong>Name:</strong>    <%= h(@metric.name) %><br />
+  <strong>Idleness:</strong> <%= h(@metric.idleness) %><br />
+</p>
+
+<p class="metadata">
+  <strong>Time:</strong> <%= h(@metric.created_at) %><br />
+</p>
+
+<p>
+  <strong>Message:</strong><br />
+  <pre><%= h(@metric.message) %></pre>
+</p>
+
+</div>

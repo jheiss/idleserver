@@ -1,3 +1,20 @@
+<%- @page_title = "Client: " + h(@client.name) %>
 
-<%= link_to 'Edit', edit_client_path(@client) %> |
-<%= link_to 'Back', clients_path %>
+<div class="record_view">
+
+<h1>Client: <%= h(@client.name) %></h1>
+
+<p>
+  <strong>Name:</strong>   <%= h(@client.name) %><br />
+  <strong>Idleness:</strong> <%= h(@client.idleness) %><br />
+</p>
+
+FIXME: integrate this client's metrics
+
+<p class="metadata">
+  <strong>Created at:</strong> <%= h(@client.created_at) %><br />
+  <strong>Updated at:</strong> <%= h(@client.updated_at) %><br />
+  <%= link_to 'Delete', client_path(@client), :confirm => 'Are you sure?', :method => :delete %></p>
+</p>
+
+</div> 

@@ -1,18 +1,38 @@
-<h1>Listing clients</h1>
+<%- @page_title = 'Clients' -%>
 
-<table>
+<%- if @clients.size > 0 -%>
+<table width="100%">
   <tr>
+    <td><h1>Clients</h1></td>
+    <td align="right">Search by name: <%- form_tag(clients_path, :method => :get) do -%><%= text_field_tag('name_substring') %><%- end -%></td>
   </tr>
-
-<% @clients.each do |client| %>
-  <tr>
-    <td><%= link_to 'Show', client %></td>
-    <td><%= link_to 'Edit', edit_client_path(client) %></td>
-    <td><%= link_to 'Destroy', client, :confirm => 'Are you sure?', :method => :delete %></td>
-  </tr>
-<% end %>
 </table>
 
-<br />
+<div id="results_table">
+  <%= will_paginate @clients %>
 
-<%= link_to 'New client', new_client_path %>
+  <table cellspacing="0" class="styled">
+    <thead>
+      <tr>
+        <th nowrap="nowrap" width="5%">&nbsp;</th>
+        <th <%= sort_td_class_helper "client" %> > <%= sort_link_helper "Client", "client" %></th>
+        <th <%= sort_td_class_helper "idleness" %> > <%= sort_link_helper "Idleness", "idleness" %></th>
+        <th <%= sort_td_class_helper "updated_at" %> > <%= sort_link_helper "Last Update", "updated_at" %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <%- @clients.each do |client| -%>
+      <tr class="<%= cycle('odd', 'even') -%>">
+        <td nowrap="nowrap" width="5%"><%= link_to 'View', client_path(client) %>
+        <td><%= client.name %></td>
+        <td><%= client.idleness %></td>
+        <td><%= client.updated_at %></td>
+      </tr>
+      <%- end -%>
+    </tbody>
+  </table>
+</div> <!-- end results_table div -->
+
+<%- else -%>
+<em>We could not find any results in the system for that search.</em>
+<%- end -%>
