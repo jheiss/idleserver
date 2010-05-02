@@ -87,4 +87,25 @@ class MetricsController < ApplicationController
       format.xml  { head :ok }
     end
   end
+  
+  # Produce a report of processes that were not excluded by clients, allowing
+  # admins to easily spot processes that should be added to their process
+  # filter.
+  def process_report
+    @process_counts = {}
+    Metric.name_equals('processes').each do |metric|
+      metric.message.split("\n").each do |line|
+        user, pid, cputime, comm = line.split(' ')
+        # Exclusion is done by the combination of user name and command name
+        # in the client, so we need to count processes the same way here.
+        # Use a hash to eliminate dups.  I.e. if user joebob has four bash
+        # processes on a box we only want to save that client_id once.
+        if @process_counts[[user, comm]]
+          @process_counts[[user, comm]][metric.client] = true
+        else
+          @process_counts[[user, comm]] = {metric.client => true}
+        end
+      end
+    end
+  end
 end

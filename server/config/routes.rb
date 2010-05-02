@@ -1,4 +1,6 @@
 ActionController::Routing::Routes.draw do |map|
+  map.connect 'metrics/process_report', :controller => 'metrics', :action => 'process_report'
+
   map.resources :metrics
 
   map.resources :clients
