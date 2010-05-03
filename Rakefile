@@ -12,7 +12,11 @@ desc 'Build distribution files for new release'
 task :dist do
   rm_rf(DIST)
   mkdir(DIST)
-  system("find client server LICENSE README VERSION | grep -v '\.git' | cpio -pdum ../../#{DIST}")
+  # FIXME: should use something like svn export
+  system("find client server LICENSE README | grep -v '\.git' | grep -v '\._' | cpio -pdum #{DIST}")
+  File.open("#{DIST}/VERSION", 'w') do |verfile|
+    verfile.puts(VER)
+  end
   system("tar czf #{DIST}.tar.gz #{DIST}")
   rm_rf(DIST)
   system("openssl md5 #{DIST}.tar.gz > #{DIST}.tar.gz.md5")
