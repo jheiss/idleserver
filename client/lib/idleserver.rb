@@ -27,9 +27,26 @@ class IdleServer
   
   class Agent
     def initialize(options={})
+      @server = options[:server] ? options[:server] : 'http://idleserver'
       @debug = options[:debug] || false
-      # FIXME: config file
-      @server = 'http://localhost:3000'
+      
+      configfile = File.join(Tpkg::CONFIGDIR, 'idleserver.conf')
+      if File.exist?(configfile)
+        IO.foreach(configfile) do |line|
+          line.chomp!
+          next if (line =~ /^\s*$/);  # Skip blank lines
+          next if (line =~ /^\s*#/);  # Skip comments
+          line.strip!  # Remove leading/trailing whitespace
+          key, value = line.split(/\s*=\s*/, 2)
+          if key == 'server'
+            # Warn the user, as this could potentially be confusing
+            # if they don't realize there's a config file lying
+            # around
+            @server = value
+            warn "Using server #{@server} from #{configfile}" if @debug
+          end
+        end
+      end
     end
     
     # Gather all metrics and report them to the server
@@ -74,7 +91,7 @@ class IdleServer
       # Query for an existing entry for this client so we know whether
       # to PUT or POST
       fqdn = Facter['fqdn'].value
-      clientqueryuri = URI.join(@server, "clients.xml?name=#{fqdn}")
+      clientqueryuri = URI.join(@server, "clients.xml?search[name]=#{fqdn}")
       puts "Getting client query from #{clientqueryuri}" if @debug
       get = Net::HTTP::Get.new(clientqueryuri.request_uri)
       response = http.request(get)
@@ -111,7 +128,7 @@ class IdleServer
         # Query for existing metrics for this client, set id in existing
         # metrics so that they get updated, add _delete psuedo-metrics for
         # ones that should go away.
-        metricqueryuri = URI.join(@server, "metrics.xml?client_id=#{clientid}")
+        metricqueryuri = URI.join(@server, "metrics.xml?search[client_id]=#{clientid}")
         puts "Getting metric query from #{metricqueryuri}" if @debug
         get = Net::HTTP::Get.new(metricqueryuri.request_uri)
         response = http.request(get)
@@ -136,7 +153,8 @@ class IdleServer
         clientputuri = URI.join(@server, "clients/#{clientid}.xml")
         puts "Putting client update to #{clientputuri}" if @debug
         put = Net::HTTP::Put.new(clientputuri.path)
-p flatten_hash(data)
+        puts "Data:" if @debug
+        p flatten_hash(data) if @debug
         put.set_form_data(flatten_hash(data))
         response = http.request(put)
       else
@@ -144,8 +162,8 @@ p flatten_hash(data)
         clientposturi = URI.join(@server, 'clients.xml')
         puts "Posting client registration to #{clientposturi}" if @debug
         post = Net::HTTP::Post.new(clientposturi.path)
-#data[:client].delete(:metrics_attributes)
-p flatten_hash(data)
+        puts "Data:" if @debug
+        p flatten_hash(data) if @debug
         post.set_form_data(flatten_hash(data))
         response = http.request(post)
       end
