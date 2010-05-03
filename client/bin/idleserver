@@ -14,12 +14,15 @@ $:.unshift File.join(File.dirname(__FILE__), "..", "lib")
 require 'optparse'
 require 'idleserver'
 
-@agentoptions = {}
+@options = {}
 
 opts = OptionParser.new(nil, 24, '  ')
 opts.banner = 'Usage: idleserver [options]'
+opts.on('--server SERVER', 'Point idleserver to an alternate server.') do |opt|
+  @options[:server] = opt
+end
 opts.on('--debug', 'Print lots of messages about what is happening') do |opt|
-  @agentoptions[:debug] = opt
+  @options[:debug] = opt
 end
 opts.on('--version', 'Show idleserver version') do |opt|
   puts IdleServer::Agent::VERSION
@@ -32,6 +35,6 @@ end
 
 leftovers = opts.parse(ARGV)
 
-idleagent = IdleServer::Agent.new(@agentoptions)
+idleagent = IdleServer::Agent.new(@options)
 idleagent.report
 
