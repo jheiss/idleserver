@@ -30,7 +30,7 @@ class IdleServer
       @server = options[:server] ? options[:server] : 'http://idleserver'
       @debug = options[:debug] || false
       
-      configfile = File.join(Tpkg::CONFIGDIR, 'idleserver.conf')
+      configfile = File.join(IdleServer::CONFIGDIR, 'idleserver.conf')
       if File.exist?(configfile)
         IO.foreach(configfile) do |line|
           line.chomp!
