@@ -65,7 +65,12 @@ class ClientsController < ApplicationController
   # PUT /clients/1.xml
   def update
     @client = Client.find(params[:id])
-
+    
+    # This forces an update of updated_at even if idleness hasn't changed. 
+    # Otherwise clients will appear to go stale if their state remains
+    # unchanged.
+    params[:client][:updated_at] = Time.now
+    
     respond_to do |format|
       if @client.update_attributes(params[:client])
         flash[:notice] = 'Client was successfully updated.'
