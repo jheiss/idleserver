@@ -1,3 +1,5 @@
+require 'intmax'
+
 class MetricsController < ApplicationController
   # GET /metrics
   # GET /metrics.xml
