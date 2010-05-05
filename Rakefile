@@ -1,4 +1,4 @@
-VER = '0.0.1'
+VER = '0.0.2'
 TAGNAME = "release-#{VER}"
 DIST = "idleserver-#{VER}"
 
@@ -27,9 +27,6 @@ end
 desc 'Tag a new release'
 task :tag do
   system("git tag -a #{TAGNAME}")
-  # Remove files that aren't in svn
-  #system("svn status #{TAGDIR} | grep '^?' | awk '{print $2}' | xargs rm -rf")
-  #puts "Remember to commit #{TAGDIR}"
 end
 
 desc 'Clean up distribution files and work directories'
