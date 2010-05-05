@@ -12,8 +12,8 @@ desc 'Build distribution files for new release'
 task :dist do
   rm_rf(DIST)
   mkdir(DIST)
-  # FIXME: should use something like svn export
-  system("find client server LICENSE README | grep -v '\\\.git' | grep -v '\\\._' | grep -v flathash.rb | cpio -pdum #{DIST}")
+  system("git archive master | tar -C #{DIST} -x")
+  File.delete("#{DIST}/Rakefile")  # Don't need this file in the distribution
   File.open("#{DIST}/VERSION", 'w') do |verfile|
     verfile.puts(VER)
   end
