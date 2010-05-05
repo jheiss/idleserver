@@ -13,7 +13,7 @@ task :dist do
   rm_rf(DIST)
   mkdir(DIST)
   # FIXME: should use something like svn export
-  system("find client server LICENSE README | grep -v '\.git' | grep -v '\._' | cpio -pdum #{DIST}")
+  system("find client server LICENSE README | grep -v '\\\.git' | grep -v '\\\._' | grep -v flathash.rb | cpio -pdum #{DIST}")
   File.open("#{DIST}/VERSION", 'w') do |verfile|
     verfile.puts(VER)
   end
