@@ -394,6 +394,20 @@ class IdleServer
               puts "Skipping header line" if @debug
               throw :nextline
             end
+            puts "user: #{user}, pid: #{pid}, cputime: #{cputime}, comm: #{comm}, lstartwday #{lstartwday}, lstartmon #{lstartmon}, lstartmday #{lstartmday}, lstarttime #{lstarttime}, lstartyear #{lstartyear}, args #{args}" if @debug
+            # Zombie processes mess up our split
+            if lstartwday == '<defunct>'
+              comm << " #{lstartwday}"
+              lstartwday = lstartmon
+              lstartmon = lstartmday
+              lstartmday = lstarttime
+              lstarttime = lstartyear
+              lstartyear = args.split(' ').first
+              args = args.split(' ')[1..-1].join(' ')
+              puts "Looks like a zombie line, now:" if @debug
+              puts "user: #{user}, pid: #{pid}, cputime: #{cputime}, comm: #{comm}, lstartwday #{lstartwday}, lstartmon #{lstartmon}, lstartmday #{lstartmday}, lstarttime #{lstarttime}, lstartyear #{lstartyear}, args #{args}" if @debug
+            end
+            # Skip ignored processes
             if ignored_processes[user]
               ignored_processes[user].each do |igproc|
                 if (igproc.kind_of?(Regexp) && comm.match(igproc)) || igproc == comm
