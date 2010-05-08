@@ -17,8 +17,8 @@
     <%- @metrics.each do |metric| -%>
     <tr class="<%= cycle('odd', 'even') -%>">
       <td nowrap="nowrap" width="5%"><%= link_to 'View', metric_path(metric) %></td>
-      <td><%= metric.client.name %></td>
-      <td><%= metric.name %></td>
+      <td><%= h metric.client.name %></td>
+      <td><%= h metric.name %></td>
       <td><%= metric.idleness %></td>
       <td><%= metric.updated_at %></td>
       <td><%= metric.message.length %></td>

@@ -4,7 +4,7 @@
 <table width="100%">
   <tr>
     <td><h1>Clients</h1></td>
-    <td align="right">Search by name: <%- form_tag(clients_path, :method => :get) do -%><%= text_field_tag('name_substring') %><%- end -%></td>
+    <td align="right">Search by name: <%- form_tag(clients_path, :method => :get) do -%><%= text_field_tag('search[name]') %><%- end -%></td>
   </tr>
 </table>
 
@@ -24,7 +24,7 @@
       <%- @clients.each do |client| -%>
       <tr class="<%= cycle('odd', 'even') -%>">
         <td nowrap="nowrap" width="5%"><%= link_to 'View', client_path(client) %>
-        <td><%= client.name %></td>
+        <td><%= h client.name %></td>
         <td><%= client.idleness %></td>
         <td><%= client.updated_at %></td>
       </tr>

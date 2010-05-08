@@ -6,7 +6,7 @@
 
 <p>
   <strong>Name:</strong>   <%= h(@client.name) %><br />
-  <strong>Idleness:</strong> <%= h(@client.idleness) %><br />
+  <strong>Idleness:</strong> <%= @client.idleness %><br />
 </p>
 
 <% @client.metrics.all(:order => 'idleness ASC').each do |metric| %>
@@ -19,27 +19,27 @@
   <% color_class = 'client_metric_green' %>
 <% end %>
 <% if metric.message.size > 0 %>
-<div class="client_metric <%= color_class %>" onclick="$('client_metric_message_<%= metric.name %>').toggle(); $('client_metric_message_<%= metric.name %>').visible() ? $('client_metric_arrow_<%= metric.name %>').innerHTML = '&#9660;&nbsp;' : $('client_metric_arrow_<%= metric.name %>').innerHTML = '&#9650;&nbsp;'; return false;" style="cursor: pointer;">
-<span id="client_metric_arrow_<%= metric.name %>">&#9650;&nbsp;</span>
+<div class="client_metric <%= color_class %>" onclick="$('client_metric_message_<%= h metric.name %>').toggle(); $('client_metric_message_<%= h metric.name %>').visible() ? $('client_metric_arrow_<%= h metric.name %>').innerHTML = '&#9660;&nbsp;' : $('client_metric_arrow_<%= h metric.name %>').innerHTML = '&#9650;&nbsp;'; return false;" style="cursor: pointer;">
+<span id="client_metric_arrow_<%= h metric.name %>">&#9650;&nbsp;</span>
 <% else %>
 <div class="client_metric <%= color_class %>">
 &nbsp;&nbsp;&nbsp;&nbsp;
 <% end %>
-<%= metric.name %>: <%= metric.idleness %>%
+<%= h metric.name %>: <%= metric.idleness %>%
 <% if metric.message.size > 0 %>
-<div id="client_metric_message_<%= metric.name %>" class="client_metric_message">
+<div id="client_metric_message_<%= h metric.name %>" class="client_metric_message">
 <pre>
-<%= metric.message %>
+<%= h metric.message %>
 </pre>
 </div>
-<script>$('client_metric_message_processes').hide();</script>
+<script>$('client_metric_message_<%= h metric.name %>').hide();</script>
 <% end %>
 </div>
 <% end %>
 
 <p class="metadata">
-  <strong>Created at:</strong> <%= h(@client.created_at) %><br />
-  <strong>Updated at:</strong> <%= h(@client.updated_at) %><br />
+  <strong>Created at:</strong> <%= @client.created_at %><br />
+  <strong>Updated at:</strong> <%= @client.updated_at %><br />
   <%= link_to 'Delete', client_path(@client), :confirm => 'Are you sure?', :method => :delete %></p>
 </p>
 
