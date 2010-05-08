@@ -346,5 +346,26 @@ table.network_summary caption
   width: 500px;
 }
 
+.client_metric
+{
+	border-color: #ccc;
+	border-width: 1px 0;
+	border-style: solid;
+	padding: .5em 1em .5em 1em;
+	margin-bottom: 1em;
+}
+.client_metric_red
+{
+	background-color: #fdd;
+}
+.client_metric_yellow
+{
+	background-color: #ffd;
+}
+.client_metric_green
+{
+	background-color: #dfd;
+}
+
 /* Hide all HRs, they are only meant for print, or non CSS browsers */
 hr { display: none; }

@@ -9,7 +9,33 @@
   <strong>Idleness:</strong> <%= h(@client.idleness) %><br />
 </p>
 
-FIXME: integrate this client's metrics
+<% @client.metrics.all(:order => 'idleness ASC').each do |metric| %>
+<% color_class = nil %>
+<% if metric.idleness <= 33 %>
+  <% color_class = 'client_metric_red' %>
+<% elsif 33 < metric.idleness && metric.idleness <= 66 %>
+  <% color_class = 'client_metric_yellow' %>
+<% elsif metric.idleness > 66 %>
+  <% color_class = 'client_metric_green' %>
+<% end %>
+<% if metric.message.size > 0 %>
+<div class="client_metric <%= color_class %>" onclick="$('client_metric_message_<%= metric.name %>').toggle(); $('client_metric_message_<%= metric.name %>').visible() ? $('client_metric_arrow_<%= metric.name %>').innerHTML = '&#9660;&nbsp;' : $('client_metric_arrow_<%= metric.name %>').innerHTML = '&#9650;&nbsp;'; return false;" style="cursor: pointer;">
+<span id="client_metric_arrow_<%= metric.name %>">&#9650;&nbsp;</span>
+<% else %>
+<div class="client_metric <%= color_class %>">
+&nbsp;&nbsp;&nbsp;&nbsp;
+<% end %>
+<%= metric.name %>: <%= metric.idleness %>%
+<% if metric.message.size > 0 %>
+<div id="client_metric_message_<%= metric.name %>" class="client_metric_message">
+<pre>
+<%= metric.message %>
+</pre>
+</div>
+<script>$('client_metric_message_processes').hide();</script>
+<% end %>
+</div>
+<% end %>
 
 <p class="metadata">
   <strong>Created at:</strong> <%= h(@client.created_at) %><br />
