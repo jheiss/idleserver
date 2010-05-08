@@ -361,6 +361,7 @@ class IdleServer
                    'pcscd',           # smart cards
                    'pdflush',
                    'rpc.idmapd',      # NFS
+                   'rpc.statd',       # NFS
                    'sdpd',            # Bluetooth
                    'sendmail',
                    'smartd',
@@ -382,13 +383,14 @@ class IdleServer
         # User is 'haldaemon', but that is too long and ps just shows the UID
         '68' => ['hald', 'hald-addon-acpi', 'hald-addon-keyb'],
       }
-      IO.popen('ps -eo user,pid,cputime,comm,lstart,args') do |pipe|
+      pscmd = 'ps -eo user,pid,cputime,comm,lstart,args'
+      IO.popen(pscmd) do |pipe|
         pipe.each do |line|
           catch :nextline do
+            line.chomp!
             user, pid, cputime, comm,
               lstartwday, lstartmon, lstartmday, lstarttime, lstartyear,
               args = line.split(' ', 10)
-            line.chomp!
             puts "Processing line from ps:" if @debug
             p line if @debug
             if user == 'USER'
@@ -396,17 +398,11 @@ class IdleServer
               throw :nextline
             end
             puts "user: #{user}, pid: #{pid}, cputime: #{cputime}, comm: #{comm}, lstartwday #{lstartwday}, lstartmon #{lstartmon}, lstartmday #{lstartmday}, lstarttime #{lstarttime}, lstartyear #{lstartyear}, args #{args}" if @debug
-            # Zombie processes mess up our split
+            # Zombie processes mess up our split, but we want to ignore them
+            # anyway.  A zombie can't be doing anything interesting.
             if lstartwday == '<defunct>'
-              comm << " #{lstartwday}"
-              lstartwday = lstartmon
-              lstartmon = lstartmday
-              lstartmday = lstarttime
-              lstarttime = lstartyear
-              lstartyear = args.split(' ').first
-              args = args.split(' ')[1..-1].join(' ')
-              puts "Looks like a zombie line, now:" if @debug
-              puts "user: #{user}, pid: #{pid}, cputime: #{cputime}, comm: #{comm}, lstartwday #{lstartwday}, lstartmon #{lstartmon}, lstartmday #{lstartmday}, lstarttime #{lstarttime}, lstartyear #{lstartyear}, args #{args}" if @debug
+              puts "Skipping zombie process #{user}, #{comm}" if @debug
+              throw :nextline
             end
             # Skip ignored processes
             if ignored_processes[user]
@@ -416,6 +412,11 @@ class IdleServer
                   throw :nextline
                 end
               end
+            end
+            # Skip our own ps command
+            if user == 'root' && args == pscmd
+              puts "Skipping our ps process #{user}, #{args}" if @debug
+              throw :nextline
             end
             # Parse cputime
             # Format, according to ps(1): [dd-]hh:mm:ss
