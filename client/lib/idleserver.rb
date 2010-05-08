@@ -370,16 +370,17 @@ class IdleServer
                    'yum-updatesd',
                    # Local stuff
                    'gmond', 'splunkd', 'opsdb_cron_wrap', 'etch_cron_wrapp'],
-        'rpc' => ['portmap'],
+        'avahi' => ['avahi-daemon'],
         'dbus' => ['dbus-daemon'],
+        'nscd' => ['nscd'],
         'ntp' => ['ntpd'],
         'postfix' => ['pickup', 'qmgr'],
+        'rpc' => ['portmap'],
+        'rpcuser' => ['rpc.statd'],
         'smmsp' => ['sendmail'],
-        'avahi' => ['avahi-daemon'],
+        'xfs' => ['xfs'],
         # User is 'haldaemon', but that is too long and ps just shows the UID
         '68' => ['hald', 'hald-addon-acpi', 'hald-addon-keyb'],
-        'xfs' => ['xfs'],
-        'rpcuser' => ['rpc.statd'],
       }
       IO.popen('ps -eo user,pid,cputime,comm,lstart,args') do |pipe|
         pipe.each do |line|
