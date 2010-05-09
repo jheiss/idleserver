@@ -182,8 +182,8 @@ class IdleServer
       
       # FIXME: these should be user configurable
       threshold = 3 * 30  # ~ 3 months in days
-      ignored_users = ['root', 'syi', 'msaltman', 'gnolan', 'pobrien', 'jheiss']
-      #ignored_users = ['root', 'syi', 'msaltman', 'gnolan', 'pobrien']
+      ignored_users = ['root', 'syi', 'msaltman', 'gnolan', 'pobrien', 'jskalets', 'egottesm', 'jheiss']
+      #ignored_users = ['root', 'syi', 'msaltman', 'gnolan', 'pobrien', 'jskalets', 'egottesm']
       
       threshtime = Time.at(Time.now - threshold * 24 * 60 * 60)
       year = Time.now.year
@@ -337,6 +337,8 @@ class IdleServer
                    %r{^kondemand/\d+},
                    'krfcommd',
                    %r{^rpciod/\d+},
+                   'cciss_scan00',
+                   'phpd_event',
                    # Real processes
                    'init',
                    'acpid',
@@ -354,6 +356,7 @@ class IdleServer
                    'hald-addon-stor',
                    'hcid',            # Bluetooth
                    'hidd',            # Bluetooth
+                   'irqbalance',
                    'klogd',
                    'master',          # postfix
                    'mingetty',
@@ -368,9 +371,30 @@ class IdleServer
                    'snmpd',
                    'sshd',
                    'syslogd',
+                   'xinetd',
                    'yum-updatesd',
+                   # HP monitoring agents
+                   'hpasmd',
+                   'cmaeventd',
+                   'cmafcad',
+                   'cmahealthd',
+                   'cmahostd',
+                   'cmaidad',
+                   'cmaided',
+                   'cmanicd',
+                   'cmapeerd',
+                   'cmasasd',
+                   'cmascsid',
+                   'cmasm2d',
+                   'cmastdeqd',
+                   'cmathreshd',
                    # Local stuff
-                   'gmond', 'splunkd', 'opsdb_cron_wrap', 'etch_cron_wrapp'],
+                   'gmond',
+                   'splunkd',
+                   'opsdb_cron_wrap', 'opsdb',
+                   'etch_cron_wrapp', 'etch',
+                   'check_ntpd', 'sh', 'sleep',
+                   'randomizer'],
         'avahi' => ['avahi-daemon'],
         'dbus' => ['dbus-daemon'],
         'nscd' => ['nscd'],
@@ -413,6 +437,11 @@ class IdleServer
                 end
               end
             end
+            # Skip this process
+            if pid.to_i == $$
+              puts "Skipping this process #{pid}, #{user}, #{args}" if @debug
+              throw :nextline
+            end
             # Skip our own ps command
             if user == 'root' && args == pscmd
               puts "Skipping our ps process #{user}, #{args}" if @debug
@@ -424,7 +453,7 @@ class IdleServer
             if cputime =~ /^(\d\d)-/
               cpudays = $1
               cputime.sub!(/^\d\d-/, '')
-              cputimesec += cpudays * 24 * 60 * 60
+              cputimesec += cpudays.to_i * 24 * 60 * 60
             end
             cpuhours, cpumins, cpusecs = cputime.split(':')
             cputimesec += cpuhours.to_i * 60 * 60
