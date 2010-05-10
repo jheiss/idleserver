@@ -339,6 +339,8 @@ class IdleServer
                    %r{^rpciod/\d+},
                    'cciss_scan00',
                    'phpd_event',
+                   'kedac',
+                   'kipmi0',
                    # Real processes
                    'init',
                    'acpid',
@@ -358,6 +360,7 @@ class IdleServer
                    'hidd',            # Bluetooth
                    'irqbalance',
                    'klogd',
+                   'lockd',           # NFS
                    'master',          # postfix
                    'mingetty',
                    'nscd',
@@ -375,6 +378,7 @@ class IdleServer
                    'yum-updatesd',
                    # HP monitoring agents
                    'hpasmd',
+                   'hpasmlited',
                    'cmaeventd',
                    'cmafcad',
                    'cmahealthd',
