@@ -30,6 +30,11 @@ class IdleServer
       @server = options[:server] ? options[:server] : 'http://idleserver'
       @debug = options[:debug] || false
       
+      @ignored_users = ['root']
+      @login_threshold = 3 * 30  # ~ 3 months in days
+      @ignored_users_processes_ignored = true
+      @process_threshold = 3 * 30  # ~ 3 months in days
+      
       configfile = File.join(IdleServer::CONFIGDIR, 'idleserver.conf')
       if File.exist?(configfile)
         IO.foreach(configfile) do |line|
@@ -44,6 +49,18 @@ class IdleServer
             # around
             @server = value
             warn "Using server #{@server} from #{configfile}" if @debug
+          elsif key == 'ignored_users'
+            @ignored_users = value.split(/\s*,\s*/)
+          elsif key == 'login_threshold'
+            @login_threshold = value.to_i
+          elsif key == 'ignored_users_processes_ignored'
+            if value == 'false'
+              @ignored_users_processes_ignored = false
+            else
+              @ignored_users_processes_ignored = true
+            end
+          elsif key == 'process_threshold'
+            @process_threshold = value.to_i
           end
         end
       end
@@ -180,12 +197,7 @@ class IdleServer
       logins = []
       mostrecent = nil
       
-      # FIXME: these should be user configurable
-      threshold = 3 * 30  # ~ 3 months in days
-      ignored_users = ['root', 'syi', 'msaltman', 'gnolan', 'pobrien', 'jskalets', 'egottesm', 'jheiss']
-      #ignored_users = ['root', 'syi', 'msaltman', 'gnolan', 'pobrien', 'jskalets', 'egottesm']
-      
-      threshtime = Time.at(Time.now - threshold * 24 * 60 * 60)
+      threshtime = Time.at(Time.now - @login_threshold * 24 * 60 * 60)
       year = Time.now.year
       month = Time.now.mon
       # Seems lame to have to define this ourselves
@@ -252,7 +264,7 @@ class IdleServer
             next
           end
           # Check for ignored users
-          if ignored_users.include?(user)
+          if @ignored_users.include?(user)
             puts "Ignoring login from ignored user #{user}" if @debug
             next
           end
@@ -300,11 +312,8 @@ class IdleServer
     def processes
       processes = []
       
-      # FIXME: Ignore processes of ignored users?
-      
+      threshtime = Time.at(Time.now - @process_threshold * 24 * 60 * 60)
       # FIXME: these should be user configurable
-      threshold = 3 * 30  # ~ 3 months in days
-      threshtime = Time.at(Time.now - threshold * 24 * 60 * 60)
       ignored_processes = {
         'root' => [
                    # Kernel psuedo processes
@@ -440,6 +449,11 @@ class IdleServer
                   throw :nextline
                 end
               end
+            end
+            # Skip processes of ignored users if configured to do so
+            if @ignored_users_processes_ignored && @ignored_users.include?(user)
+              puts "Skipping process of ignored user #{user}, #{comm}" if @debug
+              throw :nextline
             end
             # Skip this process
             if pid.to_i == $$
