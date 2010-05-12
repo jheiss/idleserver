@@ -260,8 +260,15 @@ class IdleServer
       logins = []
       mostrecent = nil
       
-      year = Time.now.year
-      month = Time.now.mon
+      year = nil
+      previously_seen_month = nil
+      if file
+        year = File.mtime(file).year
+        previously_seen_month = File.mtime(file).mon
+      else
+        year = Time.now.year
+        previously_seen_month = Time.now.mon
+      end
       # Seems lame to have to define this ourselves
       months = {'Jan' => 1, 'Feb' => 2, 'Mar' => 3, 'Apr' => 4,
                 'May' => 5, 'Jun' => 6, 'Jul' => 7, 'Aug' => 8,
@@ -312,15 +319,32 @@ class IdleServer
           # jheiss   pts/2     1.2.3.4    Wed Dec 30 18:54 - 18:54  (00:00)
           # jheiss   pts/1     1.2.3.4    Wed Dec 30 18:46 - 18:54  (00:08)
           wday, mon, mday = timestamp.split
-          if months[mon] > month
+          if months[mon] > previously_seen_month
             year -= 1
-            puts "Month went forwards (#{month} -> #{months[mon]}), year adjusted to #{year}" if @debug
+            puts "Month went forwards (#{previously_seen_month} -> #{months[mon]}), year adjusted to #{year}" if @debug
           end
-          month = months[mon]
-          # Parse the timestamp
-          time = Time.local(year, mon, mday)
-          # A sanity check
-          warn "Time sanity check failed for #{timestamp}, #{year}" if time.strftime('%a') != wday
+          previously_seen_month = months[mon]
+          # A long gap in logins can throw us off.  In this example the May
+          # logins are in 2010, the older logins appear to just be in the
+          # previous month, but the weekday is wrong.  Apr 2, 2010 is a
+          # Friday.  Apr 2, 2009 is a Thursday.
+          # jheiss   pts/1        1.2.3.4      Wed May 12 11:49   still logged in   
+          # jheiss   pts/0        1.2.3.4      Wed May 12 11:41   still logged in   
+          # jheiss   pts/0        1.2.3.4      Thu Apr  2 18:59 - 19:26  (00:26)    
+          # jheiss   pts/0        1.2.3.4      Thu Apr  2 18:54 - 18:58  (00:04)    
+          # So we keep trying older years until we find one that matches up
+          time = nil
+          year.downto(year-10) do |y|
+            # Parse the timestamp
+            time = Time.local(y, mon, mday)
+            # A sanity check
+            if time.strftime('%a') == wday
+              year = y
+              break
+            else
+              puts "Time sanity check failed for #{timestamp}, #{y}" if @debug
+            end
+          end
           
           # These next few checks could be sooner, but we put them after the
           # timestamp parsing so that the timestamp parsing sees more entries
