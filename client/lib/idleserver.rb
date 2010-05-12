@@ -33,6 +33,7 @@ class IdleServer
       @ignored_users = ['root']
       @login_threshold = 3 * 30  # ~ 3 months in days
       @ignored_users_processes_ignored = true
+      @keep_root_processes = true
       @process_threshold = 3 * 30  # ~ 3 months in days
       
       @loginthreshtime = Time.at(Time.now - @login_threshold * 24 * 60 * 60)
@@ -61,6 +62,12 @@ class IdleServer
               @ignored_users_processes_ignored = false
             else
               @ignored_users_processes_ignored = true
+            end
+          elsif key == 'keep_root_processes'
+            if value == 'false'
+              @keep_root_processes = false
+            else
+              @keep_root_processes = true
             end
           elsif key == 'process_threshold'
             @process_threshold = value.to_i
@@ -520,7 +527,9 @@ class IdleServer
               end
             end
             # Skip processes of ignored users if configured to do so
-            if @ignored_users_processes_ignored && @ignored_users.include?(user)
+            if @ignored_users_processes_ignored &&
+               @ignored_users.include?(user) &&
+               (user != 'root' || !@keep_root_processes)
               puts "Skipping process of ignored user #{user}, #{comm}" if @debug
               throw :nextline
             end
