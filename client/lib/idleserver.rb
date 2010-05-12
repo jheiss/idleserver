@@ -35,6 +35,9 @@ class IdleServer
       @ignored_users_processes_ignored = true
       @process_threshold = 3 * 30  # ~ 3 months in days
       
+      @loginthreshtime = Time.at(Time.now - @login_threshold * 24 * 60 * 60)
+      @processthreshtime = Time.at(Time.now - @process_threshold * 24 * 60 * 60)
+      
       configfile = File.join(IdleServer::CONFIGDIR, 'idleserver.conf')
       if File.exist?(configfile)
         IO.foreach(configfile) do |line|
@@ -197,15 +200,80 @@ class IdleServer
       logins = []
       mostrecent = nil
       
-      threshtime = Time.at(Time.now - @login_threshold * 24 * 60 * 60)
+      file_by_os = {
+        'Linux' => '/var/log/wtmp',
+        'SunOS' => '/var/adm/wtmpx',
+      }
+      
+      files = [nil]
+      file = file_by_os[Facter['kernel'].value]
+      if !file
+        raise "No support for logins on operating system #{Facter['kernel'].value}"
+      end
+      Dir.glob("#{file}.*") do |f|
+        # Ignore files older than the threshold
+        if File.mtime(f) < @loginthreshtime
+          puts "Ignoring login log file #{f}, timestamp #{File.mtime(f)} is older than threshold" if @debug
+        else
+          files << f
+        end
+      end
+      
+      files.each do |f|
+        filelogins, filemostrecent = logins_from_file(f)
+        logins.concat(filelogins)
+        if filemostrecent && (!mostrecent || filemostrecent > mostrecent)
+          puts "Login is most recent, updating most recent to #{filemostrecent}" if @debug
+          mostrecent = filemostrecent
+        end
+      end
+      
+      # Calculate idleness
+      # The idleness score for recent logins is based on two factors: number
+      # of recent logins and the relative recentness of those logins.  I.e.
+      # a login today indicates a lower probability of idleness than a login
+      # two months ago.
+      # Map number of recent logins onto 0..50
+      idleness_count = 50
+      if logins.size > 0 && logins.size < 10
+        idleness_count = 25
+      elsif logins.size >= 10
+        idleness_count = 0
+      end
+      puts "Login count is #{logins.size}" if @debug
+      puts "Idleness based on login count is #{idleness_count}" if @debug
+      # Map most recent login onto 0..50
+      idleness_recent = 50
+      if mostrecent
+        idleness_recent = ((Time.now - mostrecent) / (Time.now - @loginthreshtime) * 50).round
+        puts "Most recent login was #{((Time.now - mostrecent) / (24 * 60 * 60)).round} days ago" if @debug
+      end
+      puts "Idleness based on recentness is #{idleness_recent}" if @debug
+      # Calculate total idleness score
+      idleness = idleness_count + idleness_recent
+      puts "Total idleness is #{idleness}" if @debug
+      
+      {:name => 'logins', :idleness => idleness, :message => logins.join("\n")}
+    end
+      
+    def logins_from_file(file=nil)
+      logins = []
+      mostrecent = nil
+      
       year = Time.now.year
       month = Time.now.mon
       # Seems lame to have to define this ourselves
       months = {'Jan' => 1, 'Feb' => 2, 'Mar' => 3, 'Apr' => 4,
                 'May' => 5, 'Jun' => 6, 'Jul' => 7, 'Aug' => 8,
                 'Sep' => 9, 'Oct' => 10, 'Nov' => 11, 'Dec' => 12}
-      puts "Checking 'last' for recent logins" if @debug
-      IO.popen('last') do |pipe|
+      cmd = nil
+      if file
+        cmd = "last -f #{file}"
+      else
+        cmd = 'last'
+      end
+      puts "Checking '#{cmd}' for recent logins" if @debug
+      IO.popen(cmd) do |pipe|
         pipe.each do |line|
           line.chomp!
           puts "Processing line from last:" if @debug
@@ -214,7 +282,8 @@ class IdleServer
             puts "Ignoring blank line" if @debug
             next
           end
-          if line =~ /^wtmp begins /
+          if line =~ /^wtmp begins / ||
+            (file && line =~ /^#{File.basename(file)} begins /)
             puts "Ignoring footer line" if @debug
             next
           end
@@ -270,49 +339,22 @@ class IdleServer
           end
           
           # Now we can finally check and see if this login is recent
-          if time >= threshtime
+          if time >= @loginthreshtime
             puts "Login is recent, storing it" if @debug
             logins << line
             if !mostrecent || time > mostrecent
-              puts "Login is most recent, updating most recent to #{time}" if @debug
+              puts "Login is most recent for this file, updating file most recent to #{time}" if @debug
               mostrecent = time
             end
           end
         end
       end
-      
-      # Calculate idleness
-      # The idleness score for recent logins is based on two factors: number
-      # of recent logins and the relative recentness of those logins.  I.e.
-      # a login today indicates a lower probability of idleness than a login
-      # two months ago.
-      # Map number of recent logins onto 0..50
-      idleness_count = 50
-      if logins.size > 0 && logins.size < 10
-        idleness_count = 25
-      elsif logins.size >= 10
-        idleness_count = 0
-      end
-      puts "Login count is #{logins.size}" if @debug
-      puts "Idleness based on login count is #{idleness_count}" if @debug
-      # Map most recent login onto 0..50
-      idleness_recent = 50
-      if mostrecent
-        idleness_recent = ((Time.now - mostrecent) / (Time.now - threshtime) * 50).round
-        puts "Most recent login was #{((Time.now - mostrecent) / (24 * 60 * 60)).round} days ago" if @debug
-      end
-      puts "Idleness based on recentness is #{idleness_recent}" if @debug
-      # Calculate total idleness score
-      idleness = idleness_count + idleness_recent
-      puts "Total idleness is #{idleness}" if @debug
-      
-      {:name => 'logins', :idleness => idleness, :message => logins.join("\n")}
+      [logins, mostrecent]
     end
     
     def processes
       processes = []
       
-      threshtime = Time.at(Time.now - @process_threshold * 24 * 60 * 60)
       # FIXME: these should be user configurable
       ignored_processes = {
         'root' => [
@@ -516,10 +558,10 @@ class IdleServer
           # discount old processes like with do with logins since a box might
           # be running long-running daemons.  But in that case we this aspect
           # of the idleness calculation to peg at 25.
-          if start < threshtime
+          if start < @processthreshtime
             idleness_recent = 25
           else
-            idleness_recent = ((Time.now - start) / (Time.now - threshtime) * 25).round
+            idleness_recent = ((Time.now - start) / (Time.now - @processthreshtime) * 25).round
           end
           puts "Most recent process was #{((Time.now - start) / (24 * 60 * 60)).round} days ago" if @debug
         end
