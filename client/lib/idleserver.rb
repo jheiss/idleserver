@@ -450,8 +450,11 @@ class IdleServer
                    'etch_cron_wrapp', 'etch',
                    'check_ntpd', 'sh', 'sleep',
                    'randomizer'],
-        'avahi' => ['avahi-daemon'],
-        'dbus' => ['dbus-daemon'],
+        'avahi' => ['avahi-daemon'],     # Zeroconf service discovery
+        'canna' => ['cannaserver'],      # Japanese input
+        'dbus' => ['dbus-daemon', 'dbus-daemon-1'],
+        'hpsmh' => ['hpsmhd'],           # HP System Management Homepage
+        'htt' => ['htt', 'htt_server'],  # Unicode input
         'nscd' => ['nscd'],
         'ntp' => ['ntpd'],
         'postfix' => ['pickup', 'qmgr'],
