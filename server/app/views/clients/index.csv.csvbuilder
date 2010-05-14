@@ -1,0 +1,7 @@
+# Header row
+csv << [ 'Name', 'Idleness', 'Created', 'Updated' ]
+# Data rows
+@clients.each do |client|
+  csv << [ client.name, client.idleness, client.created_at, client.updated_at ]
+end
+

@@ -4,9 +4,13 @@ class ClientsController < ApplicationController
   # GET /clients
   # GET /clients.xml
   def index
-    # Client's requesting XML get no pagination (all entries)
+    # Client's requesting XML or CSV get no pagination (all entries)
     per_page = Client.per_page # will_paginate's default value
-    respond_to { |format| format.html {}; format.xml { per_page = Integer::MAX } }
+    respond_to do |format|
+      format.html {}
+      format.xml { per_page = Integer::MAX }
+      format.csv { per_page = Integer::MAX }
+    end
     
     @search = Client.search(params[:search])
     @clients = @search.paginate(:page => params[:page], :per_page => per_page)
@@ -14,6 +18,7 @@ class ClientsController < ApplicationController
     respond_to do |format|
       format.html # index.html.erb
       format.xml  { render :xml => @clients }
+      format.csv { @filename = 'idleserver-clients.csv' } # index.csv.csvbuilder
     end
   end
 
