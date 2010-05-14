@@ -18,7 +18,10 @@
     <tr class="<%= cycle('odd', 'even') -%>">
       <td><%= pc[0][0] %></td>
       <td><%= pc[0][1] %></td>
-      <td><%= pc[1].size %> <%= pc[1].collect{|ct| link_to '.', ct[0]} %></td>
+      <% # Link to the clients using a search so that users can see the %>
+      <% # hostname on mouse over.  That can be handy when scanning the %>
+      <% # report and deciding which processes need further investigation. %>
+      <td><%= pc[1].size %> <%= pc[1].collect{|ct| link_to '.', clients_path('search[name]' => ct[0].name, 'redirect_single' => 1)} %></td>
     </tr>
     <%- end -%>
   </tbody>

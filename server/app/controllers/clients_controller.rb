@@ -13,6 +13,12 @@ class ClientsController < ApplicationController
     end
     
     @search = Client.search(params[:search])
+    
+    if @search.count == 1 && params.has_key?(:redirect_single)
+      redirect_to client_url(@search.first)
+      return
+    end
+    
     @clients = @search.paginate(:page => params[:page], :per_page => per_page)
     
     respond_to do |format|
