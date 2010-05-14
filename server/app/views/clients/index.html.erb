@@ -4,7 +4,7 @@
 <table width="100%">
   <tr>
     <td><h1>Clients</h1></td>
-    <td align="right">Search by name: <%- form_tag(clients_path, :method => :get) do -%><%= text_field_tag('search[name]') %><%- end -%></td>
+    <td align="right">Search by name: <%- form_tag(clients_path, :method => :get) do -%><%= text_field_tag('search[name_like]') %><%- end -%></td>
   </tr>
 </table>
 
