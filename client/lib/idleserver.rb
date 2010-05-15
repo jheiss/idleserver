@@ -519,6 +519,10 @@ class IdleServer
             p line if @debug
             psparts = line.split(' ')
             user = psparts.shift
+            if user == 'USER'
+              puts "Skipping header line" if @debug
+              throw :nextline
+            end
             pid = psparts.shift
             cputime = psparts.shift
             comms = []
@@ -543,10 +547,6 @@ class IdleServer
             lstartyear = psparts.shift
             # Whatever is left is the args field
             args = psparts.join(' ')
-            if user == 'USER'
-              puts "Skipping header line" if @debug
-              throw :nextline
-            end
             puts "user: #{user}, pid: #{pid}, cputime: #{cputime}, comm: #{comm}, lstartwday #{lstartwday}, lstartmon #{lstartmon}, lstartmday #{lstartmday}, lstarttime #{lstarttime}, lstartyear #{lstartyear}, args #{args}" if @debug
             # A zombie can't be doing anything interesting.
             if comm.include?('<defunct>')
