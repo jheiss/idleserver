@@ -1,4 +1,4 @@
-VER = '0.0.10'
+VER = '0.0.11'
 TAGNAME = "release-#{VER}"
 DIST = "idleserver-#{VER}"
 
