@@ -25,6 +25,12 @@ class IdleServer
   VERSION = 'trunk'
   CONFIGDIR = '/etc'
   
+  # Seems lame to have to define these ourselves
+  MONTHS = {'Jan' => 1, 'Feb' => 2, 'Mar' => 3, 'Apr' => 4,
+            'May' => 5, 'Jun' => 6, 'Jul' => 7, 'Aug' => 8,
+            'Sep' => 9, 'Oct' => 10, 'Nov' => 11, 'Dec' => 12}
+  WDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  
   class Agent
     def initialize(options={})
       @server = options[:server] ? options[:server] : 'http://idleserver'
@@ -276,10 +282,6 @@ class IdleServer
         year = Time.now.year
         previously_seen_month = Time.now.mon
       end
-      # Seems lame to have to define this ourselves
-      months = {'Jan' => 1, 'Feb' => 2, 'Mar' => 3, 'Apr' => 4,
-                'May' => 5, 'Jun' => 6, 'Jul' => 7, 'Aug' => 8,
-                'Sep' => 9, 'Oct' => 10, 'Nov' => 11, 'Dec' => 12}
       cmd = nil
       if file
         cmd = "last -f #{file}"
@@ -326,11 +328,11 @@ class IdleServer
           # jheiss   pts/2     1.2.3.4    Wed Dec 30 18:54 - 18:54  (00:00)
           # jheiss   pts/1     1.2.3.4    Wed Dec 30 18:46 - 18:54  (00:08)
           wday, mon, mday = timestamp.split
-          if months[mon] > previously_seen_month
+          if MONTHS[mon] > previously_seen_month
             year -= 1
-            puts "Month went forwards (#{previously_seen_month} -> #{months[mon]}), year adjusted to #{year}" if @debug
+            puts "Month went forwards (#{previously_seen_month} -> #{MONTHS[mon]}), year adjusted to #{year}" if @debug
           end
-          previously_seen_month = months[mon]
+          previously_seen_month = MONTHS[mon]
           # A long gap in logins can throw us off.  In this example the May
           # logins are in 2010, the older logins appear to just be in the
           # previous month, but the weekday is wrong.  Apr 2, 2010 is a
@@ -403,7 +405,7 @@ class IdleServer
                    %r{^cqueue/\d+},
                    'khubd',
                    'kseriod',
-                   'kswapd0',
+                   %r{^kswapd\d+},
                    %r{^aio/\d+},
                    'kpsmoused',
                    %r{^ata/\d+},
@@ -423,6 +425,15 @@ class IdleServer
                    'phpd_event',
                    'kedac',
                    'kipmi0',
+                   'bnx2x',
+                   # %r{^ib_cm/\d+},
+                   # 'ib_addr',
+                   # 'ib_mcast',
+                   # 'ib_inform',
+                   # 'local_sa',
+                   # 'iw_cm_wq',
+                   # 'rdma_cm',
+                   # 'iscsi_eh',
                    # Real processes
                    'init',
                    'acpid',
@@ -441,6 +452,7 @@ class IdleServer
                    'hcid',            # Bluetooth
                    'hidd',            # Bluetooth
                    'irqbalance',
+                   # 'iscsid',
                    'klogd',
                    'lockd',           # NFS
                    'master',          # postfix
@@ -461,6 +473,7 @@ class IdleServer
                    # HP monitoring agents
                    'hpasmd',
                    'hpasmlited',
+                   'hpasmpld',
                    'cmaeventd',
                    'cmafcad',
                    'cmahealthd',
@@ -469,6 +482,7 @@ class IdleServer
                    'cmaided',
                    'cmanicd',
                    'cmapeerd',
+                   'cmaperfd',
                    'cmasasd',
                    'cmascsid',
                    'cmasm2d',
@@ -501,19 +515,41 @@ class IdleServer
         pipe.each do |line|
           catch :nextline do
             line.chomp!
-            user, pid, cputime, comm,
-              lstartwday, lstartmon, lstartmday, lstarttime, lstartyear,
-              args = line.split(' ', 10)
             puts "Processing line from ps:" if @debug
             p line if @debug
+            psparts = line.split(' ')
+            user = psparts.shift
+            pid = psparts.shift
+            cputime = psparts.shift
+            comms = []
+            # The comm field can include spaces, so shift off entries until we
+            # hit a day of the week, indicating the start of the lstart field
+            while !WDAYS.include?(psparts[0])
+              # Don't go into an infinite loop if the line is malformed (shift
+              # returns nil when called on an empty array)
+              pspart = psparts.shift
+              if pspart
+                comms << pspart
+              else
+                warn "Malformed ps line #{line}"
+                throw :nextline
+              end
+            end
+            comm = comms.join(' ')
+            lstartwday = psparts.shift
+            lstartmon  = psparts.shift
+            lstartmday = psparts.shift
+            lstarttime = psparts.shift
+            lstartyear = psparts.shift
+            # Whatever is left is the args field
+            args = psparts.join(' ')
             if user == 'USER'
               puts "Skipping header line" if @debug
               throw :nextline
             end
             puts "user: #{user}, pid: #{pid}, cputime: #{cputime}, comm: #{comm}, lstartwday #{lstartwday}, lstartmon #{lstartmon}, lstartmday #{lstartmday}, lstarttime #{lstarttime}, lstartyear #{lstartyear}, args #{args}" if @debug
-            # Zombie processes mess up our split, but we want to ignore them
-            # anyway.  A zombie can't be doing anything interesting.
-            if lstartwday == '<defunct>'
+            # A zombie can't be doing anything interesting.
+            if comm.include?('<defunct>')
               puts "Skipping zombie process #{user}, #{comm}" if @debug
               throw :nextline
             end
