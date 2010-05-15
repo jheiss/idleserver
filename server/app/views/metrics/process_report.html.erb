@@ -21,6 +21,8 @@
       <% # Link to the clients using a search so that users can see the %>
       <% # hostname on mouse over.  That can be handy when scanning the %>
       <% # report and deciding which processes need further investigation. %>
+      <% # Some sort of ERB weirdness is causing the <td> to disappear %>
+      <% # unless I end this block of comments with a dash percent line. -%>
       <td><%= pc[1].size %> <%= pc[1].collect{|ct| link_to '.', clients_path('search[name]' => ct[0].name, 'redirect_single' => 1)} %></td>
     </tr>
     <%- end -%>
