@@ -420,6 +420,7 @@ class IdleServer
                    'kmpath_handlerd',
                    %r{^kondemand/\d+},
                    'krfcommd',
+                   'rpciod',
                    %r{^rpciod/\d+},
                    'cciss_scan00',
                    'phpd_event',
