@@ -392,41 +392,49 @@ class IdleServer
       ignored_processes = {
         'root' => [
                    # Kernel psuedo processes
-                   %r{^migration/\d+},
-                   %r{^ksoftirqd/\d+},
-                   %r{^watchdog/\d+},
-                   %r{^events/\d+},
-                   'khelper',
-                   'kthread',
-                   'xenwatch',
-                   'xenbus',
-                   %r{^kblockd/\d+},
-                   'kacpid',
-                   %r{^cqueue/\d+},
-                   'khubd',
-                   'kseriod',
-                   %r{^kswapd\d+},
                    %r{^aio/\d+},
-                   'kpsmoused',
                    %r{^ata/\d+},
                    'ata_aux',
-                   %r{^scsi_eh_\d+},
-                   'kstriped',
-                   'kjournald',
-                   'kauditd',
-                   'udevd',
+                   'bnx2x',
+                   'cciss_scan00',
+                   %r{^cqueue/\d+},
+                   %r{^events/\d+},
                    'hd-audio0',
+                   'kacpid',
+                   'kauditd',
+                   %r{^kblockd/\d+},
+                   'kedac',
+                   'khelper',
+                   'khubd',
+                   'kipmi0',
+                   'kjournald',
                    %r{^kmpathd/\d+},
                    'kmpath_handlerd',
                    %r{^kondemand/\d+},
+                   'kpsmoused',
                    'krfcommd',
+                   'kseriod',
+                   %r{^ksoftirqd/\d+},
+                   'kstriped',
+                   %r{^kswapd\d+},
+                   'kthread',
+                   %r{^migration/\d+},
+                   'phpd_event',
                    'rpciod',
                    %r{^rpciod/\d+},
-                   'cciss_scan00',
-                   'phpd_event',
-                   'kedac',
-                   'kipmi0',
-                   'bnx2x',
+                   %r{^scsi_eh_\d+},
+                   'udevd',
+                   %r{^watchdog/\d+},
+                   'xenwatch',
+                   'xenbus',
+                   # These iSCSI and InfiniBand processes are only showing up
+                   # on a small number of systems running a few particular
+                   # apps (although those apps don't appear to using iSCSI
+                   # currently and we don't have any InfiniBand hardware). 
+                   # Arguably they should be excluded since it seems that the
+                   # mere fact of installing the associated RPMs causes these
+                   # kernel modules to get loaded and thus these process
+                   # entries to appear.
                    # %r{^ib_cm/\d+},
                    # 'ib_addr',
                    # 'ib_mcast',
@@ -453,6 +461,7 @@ class IdleServer
                    'hcid',            # Bluetooth
                    'hidd',            # Bluetooth
                    'irqbalance',
+                   # See comment about iSCSI above
                    # 'iscsid',
                    'klogd',
                    'lockd',           # NFS
@@ -494,6 +503,7 @@ class IdleServer
                    'splunkd',
                    'opsdb_cron_wrap', 'opsdb',
                    'etch_cron_wrapp', 'etch',
+                   # sh and sleep processes are associated with check_ntpd
                    'check_ntpd', 'sh', 'sleep',
                    'randomizer'],
         'avahi' => ['avahi-daemon'],     # Zeroconf service discovery
