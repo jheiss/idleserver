@@ -31,9 +31,11 @@ class IdleServer
             'Sep' => 9, 'Oct' => 10, 'Nov' => 11, 'Dec' => 12}
   WDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   
+  DEFAULT_SERVER = 'http://idleserver'
+  
   class Agent
     def initialize(options={})
-      @server = options[:server] ? options[:server] : 'http://idleserver'
+      @server = options[:server] ? options[:server] : DEFAULT_SERVER
       @debug = options[:debug] || false
       
       @ignored_users = ['root']
@@ -54,11 +56,16 @@ class IdleServer
           line.strip!  # Remove leading/trailing whitespace
           key, value = line.split(/\s*=\s*/, 2)
           if key == 'server'
-            # Warn the user, as this could potentially be confusing
-            # if they don't realize there's a config file lying
-            # around
-            @server = value
-            warn "Using server #{@server} from #{configfile}" if @debug
+            # A setting for the server to use which comes from upstream
+            # (generally from a command line option) takes precedence
+            # over the config file
+            if !options[:server]
+              @server = value
+              # Warn the user, as this could potentially be confusing
+              # if they don't realize there's a config file lying
+              # around
+              warn "Using server #{@server} from #{configfile}" if @debug
+            end
           elsif key == 'ignored_users'
             @ignored_users = value.split(/\s*,\s*/)
           elsif key == 'login_threshold'
