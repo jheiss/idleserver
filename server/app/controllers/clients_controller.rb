@@ -84,6 +84,12 @@ class ClientsController < ApplicationController
     
     respond_to do |format|
       if @client.update_attributes(params[:client])
+        if !@client[:acknowledged_until].nil? && @client[:acknowledged_until] >= Time.now
+          @client.update_attribute('idleness', 0)
+        elsif !@client[:acknowledged_until].nil? && @client[:acknowledged_until] = Time.now
+          @client.update_attribute('acknowledged_at', nil)
+          @client.update_attribute('acknowledged_until', nil)
+        end
         flash[:notice] = 'Client was successfully updated.'
         format.html { redirect_to(@client) }
         format.xml  { head :ok }
@@ -92,6 +98,16 @@ class ClientsController < ApplicationController
         format.xml  { render :xml => @client.errors, :status => :unprocessable_entity }
       end
     end
+  end
+
+  def ack
+    @client = Client.find(params[:id])
+    @client.update_attribute('idleness', 0)
+    @client.update_attribute('updated_at', Time.now)
+    @client.update_attribute('acknowledged_at', Time.now)
+    @client.update_attribute('acknowledged_until', Time.now + 30.days)
+    flash[:notice] = 'Client was successfully updated.'
+    redirect_to :action => :index
   end
 
   # DELETE /clients/1

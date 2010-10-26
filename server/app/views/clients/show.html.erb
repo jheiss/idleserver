@@ -40,6 +40,16 @@
 <p class="metadata">
   <strong>Created at:</strong> <%= @client.created_at %><br />
   <strong>Updated at:</strong> <%= @client.updated_at %><br />
+  <!-- i suppose we should hide this if it's not currently acknowledged. -->
+  <% if !@client.acknowledged_at.nil? && !@client.acknowledged_until.nil? %>
+  <strong>Acknowledged at:</strong> <%= @client.acknowledged_at %><br />
+  <strong>Acknowledged until:</strong> <%= @client.acknowledged_until %><br />
+  <% end %>
+
+  <% time = Time.now %>
+  <% in_the_year_2000 = Time.now + 30.days %>
+  <%= link_to "Acknowledge", { :action => "ack", :id => @client.id },
+                       { :class => "dangerous", :confirm => "Are you sure." } %> |
   <%= link_to 'Delete', client_path(@client), :confirm => 'Are you sure?', :method => :delete %></p>
 </p>
 

@@ -18,6 +18,7 @@
         <th><%= order @search, :by => :name %></th>
         <th><%= order @search, :by => :idleness %></th>
         <th><%= order @search, :by => :updated_at %></th>
+        <th><%= order @search, :by => :acknowledged_until, :as => "Acknowledged" %></th>
       </tr>
     </thead>
     <tbody>
@@ -27,6 +28,7 @@
         <td><%= h client.name %></td>
         <td><%= client.idleness %></td>
         <td><%= client.updated_at %></td>
+        <td><% if !client.acknowledged_until.nil? %>X<% end %>
       </tr>
       <%- end -%>
     </tbody>
