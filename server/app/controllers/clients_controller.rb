@@ -4,7 +4,7 @@ class ClientsController < ApplicationController
   # GET /clients
   # GET /clients.xml
   def index
-    # Client's requesting XML or CSV get no pagination (all entries)
+    # Clients requesting XML or CSV get no pagination (all entries)
     per_page = Client.per_page # will_paginate's default value
     respond_to do |format|
       format.html {}

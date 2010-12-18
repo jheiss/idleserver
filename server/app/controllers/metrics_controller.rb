@@ -4,7 +4,7 @@ class MetricsController < ApplicationController
   # GET /metrics
   # GET /metrics.xml
   def index
-    # Client's requesting XML get no pagination (all entries)
+    # Clients requesting XML get no pagination (all entries)
     per_page = Metric.per_page # will_paginate's default value
     respond_to { |format| format.html {}; format.xml { per_page = Integer::MAX } }
     
