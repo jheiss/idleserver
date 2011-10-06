@@ -11,6 +11,8 @@ require 'uri'
 require 'net/http'
 require 'net/https'
 require 'rexml/document'
+require 'yaml'
+require 'etc'
 require 'pp'
 begin
   # Try loading facter w/o gems first so that we don't introduce a
@@ -36,25 +38,35 @@ class IdleServer
   class Agent
     def initialize(options={})
       @server = options[:server] ? options[:server] : DEFAULT_SERVER
-      @debug = options[:debug] || false
+      @debug  = options[:debug] || false
+      configfile = options[:configfile] || nil
       
       @ignored_users = ['root']
+      @ignored_users_uid = ['0'] # ps uses uid for usernames over 8 characters
       @login_threshold = 3 * 30  # ~ 3 months in days
       @ignored_users_processes_ignored = true
-      @keep_root_processes = true
+      @ignore_root_processes = false
       @process_threshold = 3 * 30  # ~ 3 months in days
       
       @loginthreshtime = Time.at(Time.now - @login_threshold * 24 * 60 * 60)
       @processthreshtime = Time.at(Time.now - @process_threshold * 24 * 60 * 60)
-      
-      configfile = File.join(IdleServer::CONFIGDIR, 'idleserver.conf')
+      @ignored_processes = {}
+      @ignored_processes_and_children = {}
+      @uid2name = {}
+
+      # Check for a user defined config file.
+      if configfile.nil?
+        configfile = File.join(IdleServer::CONFIGDIR, 'idleserver.conf')
+        warn "Using default config file: #{configfile}" if @debug
+      end
       if File.exist?(configfile)
-        IO.foreach(configfile) do |line|
-          line.chomp!
-          next if (line =~ /^\s*$/);  # Skip blank lines
-          next if (line =~ /^\s*#/);  # Skip comments
-          line.strip!  # Remove leading/trailing whitespace
-          key, value = line.split(/\s*=\s*/, 2)
+        begin
+          config = YAML.load_file(configfile)
+        rescue ArgumentError => e 
+          raise "YAML load error, check your config file #{configfile}: #{e}"
+        end
+        config.keys.each do |key|
+          value = config[key]
           if key == 'server'
             # A setting for the server to use which comes from upstream
             # (generally from a command line option) takes precedence
@@ -68,24 +80,55 @@ class IdleServer
             end
           elsif key == 'ignored_users'
             @ignored_users = value.split(/\s*,\s*/)
+            # Let's get the ignored users uid-- ps uses the uid when 
+            # the username is over 8 characters.
+            @ignored_users.each do |user| 
+              begin
+                @ignored_users_uid << Etc.getpwnam(user).uid
+              rescue ArgumentError
+                next
+              end
+            end
+            # Use shortened usernames for login checks.
+            @ignored_users.map! { |user| user[0..7] }
           elsif key == 'login_threshold'
             @login_threshold = value.to_i
+            @loginthreshtime = Time.at(Time.now - @login_threshold * 24 * 60 * 60)
           elsif key == 'ignored_users_processes_ignored'
-            if value == 'false'
+            if value == false
               @ignored_users_processes_ignored = false
             else
               @ignored_users_processes_ignored = true
             end
-          elsif key == 'keep_root_processes'
-            if value == 'false'
-              @keep_root_processes = false
+          elsif key == 'ignore_root_processes'
+            if value == true
+              @ignore_root_processes = true
             else
-              @keep_root_processes = true
+              @ignore_root_processes = false
             end
           elsif key == 'process_threshold'
             @process_threshold = value.to_i
+            @processthreshtime = Time.at(Time.now - @process_threshold * 24 * 60 * 60)
+          elsif key == 'ignored_processes'
+            @ignored_processes = value
+          elsif key == 'ignored_processes_and_children'
+            @ignored_processes_and_children = value
           end
         end
+
+        # Put ignored user uids into a hash.
+        # I don't want to make people define uids for users in the config file. 
+        (@ignored_processes.keys | @ignored_processes_and_children.keys).each do |user|
+          next if user == 'ALL'
+          # Linux shortens names to uid, we'll collect them to match defined users in the processes section.
+          begin
+            @uid2name[Etc.getpwnam(user).uid] = user
+          rescue ArgumentError
+            next
+          end
+        end
+      else
+        raise "Missing configuration file: #{configfile}"
       end
     end
     
@@ -372,7 +415,7 @@ class IdleServer
             puts "Ignoring pseudo entry for #{user}" if @debug
             next
           end
-          # Check for ignored users
+          # Check for ignored users using the shortened usernames
           if @ignored_users.include?(user)
             puts "Ignoring login from ignored user #{user}" if @debug
             next
@@ -394,141 +437,9 @@ class IdleServer
     
     def processes
       processes = []
-      
-      # FIXME: these should be user configurable
-      ignored_processes = {
-        'root' => [
-                   # Kernel psuedo processes
-                   %r{^aio/\d+},
-                   %r{^ata/\d+},
-                   'ata_aux',
-                   'bnx2x',
-                   'cciss_scan00',
-                   %r{^cqueue/\d+},
-                   %r{^events/\d+},
-                   'hd-audio0',
-                   'kacpid',
-                   'kauditd',
-                   %r{^kblockd/\d+},
-                   'kedac',
-                   'khelper',
-                   'khubd',
-                   'kipmi0',
-                   'kjournald',
-                   %r{^kmpathd/\d+},
-                   'kmpath_handlerd',
-                   %r{^kondemand/\d+},
-                   'kpsmoused',
-                   'krfcommd',
-                   'kseriod',
-                   %r{^ksoftirqd/\d+},
-                   'kstriped',
-                   %r{^kswapd\d+},
-                   'kthread',
-                   %r{^migration/\d+},
-                   'phpd_event',
-                   'rpciod',
-                   %r{^rpciod/\d+},
-                   %r{^scsi_eh_\d+},
-                   'udevd',
-                   %r{^watchdog/\d+},
-                   'xenwatch',
-                   'xenbus',
-                   # These iSCSI and InfiniBand processes are only showing up
-                   # on a small number of systems running a few particular
-                   # apps (although those apps don't appear to using iSCSI
-                   # currently and we don't have any InfiniBand hardware). 
-                   # Arguably they should be excluded since it seems that the
-                   # mere fact of installing the associated RPMs causes these
-                   # kernel modules to get loaded and thus these process
-                   # entries to appear.
-                   # %r{^ib_cm/\d+},
-                   # 'ib_addr',
-                   # 'ib_mcast',
-                   # 'ib_inform',
-                   # 'local_sa',
-                   # 'iw_cm_wq',
-                   # 'rdma_cm',
-                   # 'iscsi_eh',
-                   # Real processes
-                   'init',
-                   'acpid',
-                   'agetty',
-                   'atd',
-                   'auditd',
-                   'audispd',         # Goes with auditd
-                   'automount',
-                   'crond',
-                   'cupsd',
-                   'dhclient',
-                   'gam_server',      # gamin file change notification
-                   'gpm',
-                   'hald-runner',     # hardware notification
-                   'hald-addon-stor',
-                   'hcid',            # Bluetooth
-                   'hidd',            # Bluetooth
-                   'irqbalance',
-                   # See comment about iSCSI above
-                   # 'iscsid',
-                   'klogd',
-                   'lockd',           # NFS
-                   'master',          # postfix
-                   'mingetty',
-                   'nscd',
-                   'pcscd',           # smart cards
-                   'pdflush',
-                   'rpc.idmapd',      # NFS
-                   'rpc.statd',       # NFS
-                   'sdpd',            # Bluetooth
-                   'sendmail',
-                   'smartd',
-                   'snmpd',
-                   'sshd',
-                   'syslogd',
-                   'xinetd',
-                   'yum-updatesd',
-                   # HP monitoring agents
-                   'hpasmd',
-                   'hpasmlited',
-                   'hpasmpld',
-                   'cmaeventd',
-                   'cmafcad',
-                   'cmahealthd',
-                   'cmahostd',
-                   'cmaidad',
-                   'cmaided',
-                   'cmanicd',
-                   'cmapeerd',
-                   'cmaperfd',
-                   'cmasasd',
-                   'cmascsid',
-                   'cmasm2d',
-                   'cmastdeqd',
-                   'cmathreshd',
-                   # Local stuff
-                   'gmond',
-                   'splunkd',
-                   'opsdb_cron_wrap', 'opsdb',
-                   'etch_cron_wrapp', 'etch',
-                   # sh and sleep processes are associated with check_ntpd
-                   'check_ntpd', 'sh', 'sleep',
-                   'randomizer'],
-        'avahi' => ['avahi-daemon'],     # Zeroconf service discovery
-        'canna' => ['cannaserver'],      # Japanese input
-        'dbus' => ['dbus-daemon', 'dbus-daemon-1'],
-        'hpsmh' => ['hpsmhd'],           # HP System Management Homepage
-        'htt' => ['htt', 'htt_server'],  # Unicode input
-        'nscd' => ['nscd'],
-        'ntp' => ['ntpd'],
-        'postfix' => ['pickup', 'qmgr'],
-        'rpc' => ['portmap'],
-        'rpcuser' => ['rpc.statd'],
-        'smmsp' => ['sendmail'],
-        'xfs' => ['xfs'],
-        # User is 'haldaemon', but that is too long and ps just shows the UID
-        '68' => ['hald', 'hald-addon-acpi', 'hald-addon-keyb'],
-      }
-      pscmd = 'ps -eo user,pid,cputime,comm,lstart,args'
+      ignored = []
+      # fix me: I don't think this ps will work on SunOS.
+      pscmd = 'ps -eo ppid,user,pid,cputime,comm,lstart,args'
       IO.popen(pscmd) do |pipe|
         pipe.each do |line|
           catch :nextline do
@@ -536,6 +447,11 @@ class IdleServer
             puts "Processing line from ps:" if @debug
             p line if @debug
             psparts = line.split(' ')
+            # keep the ppid for later use
+            ppid = psparts.shift
+            # return the line to its expected format
+            line.strip! 
+            line.slice!(/^\d*?\s/)
             user = psparts.shift
             if user == 'USER'
               puts "Skipping header line" if @debug
@@ -565,31 +481,76 @@ class IdleServer
             lstartyear = psparts.shift
             # Whatever is left is the args field
             args = psparts.join(' ')
-            puts "user: #{user}, pid: #{pid}, cputime: #{cputime}, comm: #{comm}, lstartwday #{lstartwday}, lstartmon #{lstartmon}, lstartmday #{lstartmday}, lstarttime #{lstarttime}, lstartyear #{lstartyear}, args #{args}" if @debug
+            puts "\tuser: #{user}, pid: #{pid}, ppid: #{ppid}, cputime: #{cputime}, comm: #{comm}, lstartwday: #{lstartwday}, lstartmon: #{lstartmon}, lstartmday: #{lstartmday}, lstarttime: #{lstarttime}, lstartyear: #{lstartyear}, args: #{args}" if @debug
             # A zombie can't be doing anything interesting.
             if comm.include?('<defunct>')
               puts "Skipping zombie process #{user}, #{comm}" if @debug
               throw :nextline
             end
-            # Skip ignored processes
-            if ignored_processes[user]
-              ignored_processes[user].each do |igproc|
-                if (igproc.kind_of?(Regexp) && comm.match(igproc)) || igproc == comm
-                  puts "Skipping ignored process #{user}, #{comm}" if @debug
+            # Skip 'ALL' ignored processes
+            if @ignored_processes['ALL']
+              @ignored_processes['ALL'].each do |igproc|
+                if ignore_process?(igproc,comm)
+                  puts "[ignored_processes]: Skipping ALL #{comm}" if @debug
+                  throw :nextline
+                end
+              end
+            end
+            # Skip 'ALL' ignored processes and their children
+            if @ignored_processes_and_children['ALL']
+              @ignored_processes_and_children['ALL'].each do |igproc|
+                if ignore_process?(igproc,comm)
+                  puts "[ignored_processes_and_children]: Skipping ALL #{comm}" if @debug
+                  # Add the pid to ignored if we should ignore its children as well
+                  ignored << { :pid => pid, :ppid => ppid }
+                  throw :nextline
+                end
+              end
+            end
+            # Skip ignored user processes
+            if (@ignored_processes[user] || @ignored_processes[@uid2name[user]])
+              # Find the right user, convert a uid to a username if necessary.
+              if @ignored_processes[user]
+                tmpuser = user
+              elsif @ignored_processes[@uid2name[user]]
+                tmpuser = @uid2name[user]
+              end
+              @ignored_processes[tmpuser].each do |igproc|
+                if ignore_process?(igproc,comm)
+                  puts "[ignored_processes]: Skipping ignored process #{tmpuser}, #{comm}" if @debug
+                  throw :nextline
+                end
+              end
+            end
+            # Skip ignored user processes and their children
+            if (@ignored_processes_and_children[user] || @ignored_processes_and_children[@uid2name[user]])
+              # Find the right user, convert a uid to a username if necessary.
+              if @ignored_processes_and_children[user]
+                tmpuser = user
+              elsif @ignored_processes_and_children[@uid2name[user]]
+                tmpuser = @uid2name[user]
+              end
+              @ignored_processes_and_children[tmpuser].each do |igproc|
+                if ignore_process?(igproc,comm)
+                  puts "[ignored_processes_and_children]: Skipping ignored process #{tmpuser}, #{comm}" if @debug
+                  # Add the pid to ignored if we should ignore its children as well
+                  ignored << { :pid => pid, :ppid => ppid }
                   throw :nextline
                 end
               end
             end
             # Skip processes of ignored users if configured to do so
             if @ignored_users_processes_ignored &&
-               @ignored_users.include?(user) &&
-               (user != 'root' || !@keep_root_processes)
-              puts "Skipping process of ignored user #{user}, #{comm}" if @debug
+               (@ignored_users.include?(user) || @ignored_users_uid.include?(user)) &&
+               (user != 'root' || @ignore_root_processes)
+              puts "[ignored_users_processes_ignored]: Skipping process of ignored user #{user}, #{comm}" if @debug
+              # Add the pid to ignored if we should ignore the children of the ignored logins.
+              ignored << { :pid => pid, :ppid => ppid }
               throw :nextline
             end
-            # Skip this process
-            if pid.to_i == $$
-              puts "Skipping this process #{pid}, #{user}, #{args}" if @debug
+            # Skip this process and its parent
+            if pid.to_i == $$ || pid.to_i == Process.ppid
+              puts "Skipping our process, #{pid}, #{user}, #{args}" if @debug
               throw :nextline
             end
             # Skip our own ps command
@@ -617,11 +578,39 @@ class IdleServer
             puts "lstart #{lstartstring} parsed to #{start}" if @debug
             # A sanity check
             warn "start sanity check failed for #{lstartstring}" if start.strftime('%a') != lstartwday
-            # Save, keeping the fields we need for calculating idleness as separate hash keys
-            processes << {:line => line, :user => user, :cputime => cputimesec, :start => start}
+            # Saving separate hash keys for the fields we need for calculating idleness and for ignoring 
+            # the children of ignored processes.
+            processes << {:line => line, :user => user, :cputime => cputimesec, :start => start, :pid => pid, :ppid => ppid }
           end
         end
-        
+
+        # Get rid of the parent (one level) of the ignored process and all of the children (grand and great grand if applicable).
+        # Getting rid of the parent of custom scripts helps with ignored sripts run through cron-- ex: it'll throw out the 
+        # parent that perhaps has a comm of sh.
+        if !ignored.empty?
+          # Throw out the parent (only one level) of the ignored process
+          # and create new array of pids for throwing out all children.
+          ignorechildren = []
+          puts "Process count before removing parents: #{processes.size}" if @debug
+          #
+          ignored.each do |pro|
+            processes.delete_if { |e| pro[:ppid] == e[:pid] }
+            ignorechildren << pro[:pid]
+            puts "Process count is #{processes.size} after checking for the parent of #{pro[:pid]} (ppid=#{pro[:ppid]})" if @debug
+          end
+
+          # Throw out all of the children of the ignored_processes_and_children.
+          puts "Process count before removing children: #{processes.size}" if @debug
+          #
+          ignorechildren.each do |parent|
+            # Add the child pid to our ignorechildren so that we can check for grandchildren.
+            processes.each { |e| ignorechildren.push(e[:pid]) if parent == e[:ppid] }
+            # Remove the ignored child process from our array of hashes.
+            processes.delete_if { |e| parent == e[:ppid] }
+            puts "Process count is #{processes.size} after removing child processes related to ignored process pid #{parent}" if @debug
+          end
+        end
+         
         # Calculate idleness
         idleness = 0
         # The idleness score for processes is based on four factors: number
@@ -645,7 +634,7 @@ class IdleServer
           pp mostrecent if @debug
           start = mostrecent[:start]
           # The process may be older than our threshold, we don't completely
-          # discount old processes like with do with logins since a box might
+          # discount old processes like we do with logins since a box might
           # be running long-running daemons.  But in that case we this aspect
           # of the idleness calculation to peg at 25.
           if start < @processthreshtime
@@ -693,6 +682,16 @@ class IdleServer
     
     def disk_io
     end
+
+    # igproc is the ignored process name defined in the config file
+    # comm is the ps comm value
+    def ignore_process?(igproc,comm)
+      # allow/check for ignored procs past 15 characters
+      igproc = igproc[0..14] if igproc.kind_of?(String) && igproc.size > 15
+      if (igproc.kind_of?(Regexp) && comm.match(igproc)) || igproc == comm
+        true
+      end
+    end
     
     private
       # http://marklunds.com/articles/one/314
@@ -720,7 +719,6 @@ class IdleServer
         end
         name
       end
-    
   end # class Agent
 end # class IdleServer
 
