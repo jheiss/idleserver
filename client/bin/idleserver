@@ -18,10 +18,13 @@ require 'idleserver'
 
 opts = OptionParser.new(nil, 24, '  ')
 opts.banner = 'Usage: idleserver [options]'
+opts.on('--config CONFIG', 'Point idleserver to an alternate configuration file.') do |opt|
+  @options[:configfile] = opt
+end
 opts.on('--server SERVER', 'Point idleserver to an alternate server.') do |opt|
   @options[:server] = opt
 end
-opts.on('--debug', 'Print lots of messages about what is happening') do |opt|
+opts.on('--debug', 'Print lots of messages about what is happening.') do |opt|
   @options[:debug] = opt
 end
 opts.on('--version', 'Show idleserver version') do |opt|
