@@ -84,7 +84,7 @@ class IdleServer
             # the username is over 8 characters.
             @ignored_users.each do |user| 
               begin
-                @ignored_users_uid << Etc.getpwnam(user).uid
+                @ignored_users_uid << Etc.getpwnam(user).uid.to_s
               rescue ArgumentError
                 next
               end
@@ -122,7 +122,7 @@ class IdleServer
           next if user == 'ALL'
           # Linux shortens names to uid, we'll collect them to match defined users in the processes section.
           begin
-            @uid2name[Etc.getpwnam(user).uid] = user
+            @uid2name[Etc.getpwnam(user).uid.to_s] = user
           rescue ArgumentError
             next
           end
