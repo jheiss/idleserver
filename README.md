@@ -1,5 +1,4 @@
 idleserver - Idle Server Finder
-https://github.com/jheiss/idleserver
 
 = Overview =
 
