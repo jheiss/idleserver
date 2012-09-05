@@ -6,10 +6,13 @@ class MetricsController < ApplicationController
   def index
     # Clients requesting XML get no pagination (all entries)
     per_page = Metric.per_page # will_paginate's default value
-    respond_to { |format| format.html {}; format.xml { per_page = Integer::MAX } }
+    respond_to do |format|
+      format.html {}
+      format.xml { per_page = Integer::MAX }
+    end
     
-    @search = Metric.search(params[:search])
-    @metrics = @search.paginate(:page => params[:page], :per_page => per_page)
+    @q = Metric.search(params[:q])
+    @metrics = @q.result.paginate(:page => params[:page], :per_page => per_page)
     
     respond_to do |format|
       format.html # index.html.erb
@@ -95,7 +98,7 @@ class MetricsController < ApplicationController
   # filter.
   def process_report
     @process_counts = {}
-    Metric.name_equals('processes').each do |metric|
+    Metric.where(name: 'processes').each do |metric|
       metric.message.split("\n").each do |line|
         user, pid, cputime, comm = line.split(' ')
         # Exclusion is done by the combination of user name and command name

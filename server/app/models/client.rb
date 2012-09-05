@@ -1,10 +1,16 @@
 class Client < ActiveRecord::Base
+  attr_accessible :name, :idleness, :metrics_attributes
+  
   has_many :metrics, :dependent => :destroy
   
   accepts_nested_attributes_for :metrics, :allow_destroy => true
   
-  validates_presence_of :name
-  validates_uniqueness_of :name
+  validates :name, presence: true, uniqueness: true
   # Idleness is a percentage
-  validates_inclusion_of :idleness, :in => 0..100, :allow_nil => true
+  validates :idleness,
+    numericality: {
+      only_integer: true,
+      greater_than_or_equal_to: 0,
+      less_than_or_equal_to: 100,
+      allow_nil: true }
 end

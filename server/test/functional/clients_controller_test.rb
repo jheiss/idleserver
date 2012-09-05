@@ -1,6 +1,10 @@
 require 'test_helper'
 
 class ClientsControllerTest < ActionController::TestCase
+  def setup
+    @client = FactoryGirl.create(:client)
+  end
+  
   test "should get index" do
     get :index
     assert_response :success
@@ -14,30 +18,30 @@ class ClientsControllerTest < ActionController::TestCase
 
   test "should create client" do
     assert_difference('Client.count') do
-      post :create, :client => { }
+      post :create, :client => FactoryGirl.attributes_for(:client)
     end
 
     assert_redirected_to client_path(assigns(:client))
   end
 
   test "should show client" do
-    get :show, :id => clients(:one).to_param
+    get :show, :id => @client
     assert_response :success
   end
 
   test "should get edit" do
-    get :edit, :id => clients(:one).to_param
+    get :edit, :id => @client
     assert_response :success
   end
 
   test "should update client" do
-    put :update, :id => clients(:one).to_param, :client => { }
+    put :update, :id => @client, :client => FactoryGirl.attributes_for(:client)
     assert_redirected_to client_path(assigns(:client))
   end
 
   test "should destroy client" do
     assert_difference('Client.count', -1) do
-      delete :destroy, :id => clients(:one).to_param
+      delete :destroy, :id => @client
     end
 
     assert_redirected_to clients_path

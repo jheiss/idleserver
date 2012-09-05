@@ -12,14 +12,14 @@ class ClientsController < ApplicationController
       format.csv { per_page = Integer::MAX }
     end
     
-    @search = Client.search(params[:search])
+    @q = Client.search(params[:q])
     
-    if @search.count == 1 && params.has_key?(:redirect_single)
-      redirect_to client_url(@search.first)
+    if @q.count == 1 && params.has_key?(:redirect_single)
+      redirect_to client_url(@q.first)
       return
     end
     
-    @clients = @search.paginate(:page => params[:page], :per_page => per_page)
+    @clients = @q.result.paginate(:page => params[:page], :per_page => per_page)
     
     respond_to do |format|
       format.html # index.html.erb

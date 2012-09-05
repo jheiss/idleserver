@@ -1,6 +1,10 @@
 require 'test_helper'
 
 class MetricsControllerTest < ActionController::TestCase
+  def setup
+    @metric = FactoryGirl.create(:metric)
+  end
+  
   test "should get index" do
     get :index
     assert_response :success
@@ -14,32 +18,38 @@ class MetricsControllerTest < ActionController::TestCase
 
   test "should create metric" do
     assert_difference('Metric.count') do
-      post :create, :metric => { }
+      post :create, :metric => FactoryGirl.attributes_for(:metric)
     end
 
     assert_redirected_to metric_path(assigns(:metric))
   end
 
   test "should show metric" do
-    get :show, :id => metrics(:one).to_param
+    get :show, :id => @metric
     assert_response :success
   end
 
   test "should get edit" do
-    get :edit, :id => metrics(:one).to_param
+    get :edit, :id => @metric
     assert_response :success
   end
 
   test "should update metric" do
-    put :update, :id => metrics(:one).to_param, :metric => { }
+    put :update, :id => @metric, :metric => FactoryGirl.attributes_for(:metric)
     assert_redirected_to metric_path(assigns(:metric))
   end
 
   test "should destroy metric" do
     assert_difference('Metric.count', -1) do
-      delete :destroy, :id => metrics(:one).to_param
+      delete :destroy, :id => @metric
     end
 
     assert_redirected_to metrics_path
+  end
+
+  test "should get process report" do
+    get :process_report
+    assert_response :success
+    assert_not_nil assigns(:process_counts)
   end
 end

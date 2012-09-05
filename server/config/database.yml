@@ -1,5 +1,8 @@
 # SQLite version 3.x
-#   gem install sqlite3-ruby (not necessary on OS X Leopard)
+#   gem install sqlite3
+#
+#   Ensure the SQLite 3 gem is defined in your Gemfile
+#   gem 'sqlite3'
 development:
   adapter: sqlite3
   database: db/development.sqlite3
@@ -19,4 +22,4 @@ production:
   adapter: sqlite3
   database: db/production.sqlite3
   pool: 5
-  timeout: 20000
+  timeout: 5000
