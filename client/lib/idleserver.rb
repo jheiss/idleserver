@@ -1,7 +1,6 @@
 ##############################################################################
 # Idle server agent
-# Copyright 2010 AT&T Interactive
-# http://idleserver.sourceforge.net/
+# https://github.com/jheiss/idleserver
 # License: MIT (http://www.opensource.org/licenses/mit-license.php)
 ##############################################################################
 
@@ -174,7 +173,7 @@ class IdleServer
       # Query for an existing entry for this client so we know whether
       # to PUT or POST
       fqdn = Facter['fqdn'].value
-      clientqueryuri = URI.join(@server, "clients.xml?search[name]=#{fqdn}")
+      clientqueryuri = URI.join(@server, "clients.xml?q[name_eq]=#{fqdn}")
       puts "Getting client query from #{clientqueryuri}" if @debug
       get = Net::HTTP::Get.new(clientqueryuri.request_uri)
       response = http.request(get)
@@ -211,7 +210,7 @@ class IdleServer
         # Query for existing metrics for this client, set id in existing
         # metrics so that they get updated, add _delete psuedo-metrics for
         # ones that should go away.
-        metricqueryuri = URI.join(@server, "metrics.xml?search[client_id]=#{clientid}")
+        metricqueryuri = URI.join(@server, "metrics.xml?q[client_id_eq]=#{clientid}")
         puts "Getting metric query from #{metricqueryuri}" if @debug
         get = Net::HTTP::Get.new(metricqueryuri.request_uri)
         response = http.request(get)
@@ -266,20 +265,24 @@ class IdleServer
       file_by_os = {
         'Linux' => '/var/log/wtmp',
         'SunOS' => '/var/adm/wtmpx',
+        'Darwin' => nil,
       }
       
       files = [nil]
-      file = file_by_os[Facter['kernel'].value]
-      if !file
-        raise "No support for logins on operating system #{Facter['kernel'].value}"
-      end
-      Dir.glob("#{file}.*") do |f|
-        # Ignore files older than the threshold
-        if File.mtime(f) < @loginthreshtime
-          puts "Ignoring login log file #{f}, timestamp #{File.mtime(f)} is older than threshold" if @debug
-        else
-          files << f
+      if file_by_os.has_key?(Facter['kernel'].value)
+        file = file_by_os[Facter['kernel'].value]
+        if file
+          Dir.glob("#{file}.*") do |f|
+            # Ignore files older than the threshold
+            if File.mtime(f) < @loginthreshtime
+              puts "Ignoring login log file #{f}, timestamp #{File.mtime(f)} is older than threshold" if @debug
+            else
+              files << f
+            end
+          end
         end
+      else
+        raise "No support for logins on operating system #{Facter['kernel'].value}"
       end
       
       files.each do |f|
