@@ -5,6 +5,7 @@ class ClientsController < ApplicationController
   # GET /clients.xml
   def index
     # Clients requesting XML or CSV get no pagination (all entries)
+    # FIXME: stream results to XML/CSV clients
     per_page = Client.per_page # will_paginate's default value
     respond_to do |format|
       format.html {}
@@ -14,8 +15,10 @@ class ClientsController < ApplicationController
     
     @q = Client.search(params[:q])
     
-    if @q.count == 1 && params.has_key?(:redirect_single)
-      redirect_to client_url(@q.first)
+    # FIXME: @q.result.length is horrible.  Ransack's predecessors had a count
+    # method on the query object, but ransack does not.
+    if params.has_key?(:redirect_single) && @q.result.length == 1
+      redirect_to client_url(@q.result.first)
       return
     end
     
