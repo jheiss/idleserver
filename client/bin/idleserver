@@ -1,10 +1,7 @@
 #!/usr/bin/env ruby
-$-w = true
-#!/usr/bin/ruby -w
 ##############################################################################
 # Idle server agent
-# Copyright 2010 AT&T Interactive
-# http://idleserver.sourceforge.net/
+# https://github.com/jheiss/idleserver
 # License: MIT (http://www.opensource.org/licenses/mit-license.php)
 ##############################################################################
 
