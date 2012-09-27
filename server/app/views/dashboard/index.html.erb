@@ -1,21 +1,15 @@
-<%- @page_title = "Dashboard" %>
-
-<div id="dashboard_menu">
-</div> <!-- end dashboard_menu -->
-
-<div id="dashboard_body">
-
-<table class="network_summary">
+<table class="table table-bordered">
   <caption>Client Summary</caption>
   <tbody>
     <tr>
-    <tr><td>Number of clients:</td> <td><%= @total_count    == 0 ? @total_count    : link_to(@total_count, clients_path) %></td></tr>
+      <td>Number of clients:</td>
+      <td><%= @total_count == 0 ? @total_count : link_to(@total_count, clients_path) %></td>
     </tr>
   </tbody>
 </table>
 
-<%= render :partial => "idleness_chart" %>
-<%= render :partial => "client_chart" %>
-
-</div> <!-- end dashboard_body -->
+<div id="idleness_chart" data-url="<%= @idleness_data_url %>">
+</div>
+<div id="client_chart" data-url="<%= @client_data_url %>">
+</div>
 
