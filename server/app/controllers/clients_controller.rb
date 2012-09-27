@@ -105,11 +105,14 @@ class ClientsController < ApplicationController
 
   def ack
     @client = Client.find(params[:id])
-    @client.update_attribute('idleness', 0)
-    @client.update_attribute('updated_at', Time.now)
-    @client.update_attribute('acknowledged_at', Time.now)
-    @client.update_attribute('acknowledged_until', Time.now + 30.days)
-    flash[:notice] = 'Client was successfully updated.'
+    if @client.update_attributes(
+        idleness: 0,
+        acknowledged_at: Time.zone.now,
+        acknowledged_until: 30.days.from_now)
+      flash[:notice] = 'Client was successfully acknowledged.'
+    else
+      flash[:error] = 'Acknowledgement failed.'
+    end
     redirect_to :action => :index
   end
 
