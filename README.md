@@ -29,6 +29,6 @@ License: MIT (see LICENSE file)
 Various parties have contributed to idleserver development and hold the
 copyright to the code they have contributed, including but not limited to:
 
-* AT&T Interactive
+* AT&T Interactive:  Marjorie Saltman, Pat O'Brien
 * Jason Heiss
 
