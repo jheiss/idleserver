@@ -5,6 +5,7 @@ class MetricsController < ApplicationController
   # GET /metrics.xml
   def index
     # Clients requesting XML get no pagination (all entries)
+    # FIXME: stream results to XML clients
     per_page = Metric.per_page # will_paginate's default value
     respond_to do |format|
       format.html {}
