@@ -42,6 +42,8 @@ gem 'jquery-rails'
 gem 'will_paginate'
 gem 'ransack'
 gem 'csv_builder'
+# gem 'friendly_id'
+gem 'simple_form'
 
 group :test do
   gem 'factory_girl_rails'
