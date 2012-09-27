@@ -14,14 +14,6 @@ class ClientsController < ApplicationController
     end
     
     @q = Client.search(params[:q])
-    
-    # FIXME: @q.result.length is horrible.  Ransack's predecessors had a count
-    # method on the query object, but ransack does not.
-    if params.has_key?(:redirect_single) && @q.result.length == 1
-      redirect_to client_url(@q.result.first)
-      return
-    end
-    
     @clients = @q.result.paginate(:page => params[:page], :per_page => per_page)
     
     respond_to do |format|

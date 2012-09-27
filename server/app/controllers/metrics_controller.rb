@@ -1,4 +1,5 @@
 require 'intmax'
+require 'set'
 
 class MetricsController < ApplicationController
   # GET /metrics
@@ -106,11 +107,9 @@ class MetricsController < ApplicationController
         # in the client, so we need to count processes the same way here.
         # Use a hash to eliminate dups.  I.e. if user joebob has four bash
         # processes on a box we only want to save that client_id once.
-        if @process_counts[[user, comm]]
-          @process_counts[[user, comm]][metric.client] = true
-        else
-          @process_counts[[user, comm]] = {metric.client => true}
-        end
+        key = {user: user, command: comm}
+        @process_counts[key] ||= Set.new
+        @process_counts[key].add(metric.client)
       end
     end
   end

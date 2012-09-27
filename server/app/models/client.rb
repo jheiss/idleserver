@@ -1,4 +1,7 @@
 class Client < ActiveRecord::Base
+  extend FriendlyId
+  friendly_id :name, use: :slugged
+  
   attr_accessible :name, :idleness, :metrics_attributes,
     :updated_at, :acknowledged_at, :acknowledged_until
   
