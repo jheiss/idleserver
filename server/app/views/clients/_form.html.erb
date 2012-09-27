@@ -1,29 +1,12 @@
-<%= form_for @client, :html => { :class => 'form-horizontal' } do |f| %>
-  <div class="control-group">
-    <%= f.label :name, :class => 'control-label' %>
-    <div class="controls">
-      <%= f.text_field :name, :class => 'text_field' %>
-    </div>
+<%= simple_form_for @client, :html => { :class => 'form-horizontal' } do |f| %>
+  <%= f.error_notification %>
+  
+  <div class="form-inputs">
+    <%= f.input :name %>
+    <%= f.input :idleness %>
+    <%= f.input :acknowledged_until %>
   </div>
-  <div class="control-group">
-    <%= f.label :idleness, :class => 'control-label' %>
-    <div class="controls">
-      <%= f.number_field :idleness, :class => 'number_field' %>
-    </div>
-  </div>
-  <div class="control-group">
-    <%= f.label :acknowledged_at, :class => 'control-label' %>
-    <div class="controls">
-      <%= f.datetime_select :acknowledged_at, :class => 'datetime_select' %>
-    </div>
-  </div>
-  <div class="control-group">
-    <%= f.label :acknowledged_until, :class => 'control-label' %>
-    <div class="controls">
-      <%= f.datetime_select :acknowledged_until, :class => 'datetime_select' %>
-    </div>
-  </div>
-
+  
   <div class="form-actions">
     <%= f.submit nil, :class => 'btn btn-primary' %>
     <%= link_to t('.cancel', :default => t("helpers.links.cancel")),
