@@ -1,7 +1,6 @@
 <h1>Un-excluded Process Report</h1>
 
-<div id="results_table">
-<table cellspacing="0" class="styled">
+<table class="table table-striped">
   <thead>
     <tr>
       <th>Username</th>
@@ -15,7 +14,7 @@
     <% # For extra confusion, the keys of @process_counts are themselves %>
     <% # two element arrays of username and command. %>
     <%- @process_counts.sort{|a,b| b[1].length <=> a[1].length}.each do |pc| -%>
-    <tr class="<%= cycle('odd', 'even') -%>">
+    <tr>
       <td><%= pc[0][0] %></td>
       <td><%= pc[0][1] %></td>
       <% # Link to the clients using a search so that users can see the %>
@@ -23,11 +22,8 @@
       <% # report and deciding which processes need further investigation. %>
       <% # Some sort of ERB weirdness is causing the <td> to disappear %>
       <% # unless I end this block of comments with a dash percent line. -%>
-      <td><%= pc[1].size %> <%= pc[1].collect{|ct| link_to '.', clients_path('search[name]' => ct[0].name, 'redirect_single' => 1)} %></td>
+      <td><%= pc[1].size %> <%= pc[1].collect{|ct| link_to('.', clients_path('q[name_eq]' => ct[0].name, 'redirect_single' => 1))}.join('').html_safe %></td>
     </tr>
     <%- end -%>
   </tbody>
 </table>
-</div> <!-- end results_table div -->
-
-<br />

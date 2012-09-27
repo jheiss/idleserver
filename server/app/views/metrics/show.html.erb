@@ -1,22 +1,29 @@
-<%- @page_title = "Metric" %>
+<%- model_class = Metric -%>
+<div class="page-header">
+  <h1><%=t '.title', :default => model_class.model_name.human %></h1>
+</div>
 
-<div class="record_view">
+<dl class="dl-horizontal">
+  <dt><strong><%= model_class.human_attribute_name(:client_id) %>:</strong></dt>
+  <dd><%= link_to @metric.client.name, @metric.client %></dd>
+  <dt><strong><%= model_class.human_attribute_name(:name) %>:</strong></dt>
+  <dd><%= @metric.name %></dd>
+  <dt><strong><%= model_class.human_attribute_name(:idleness) %>:</strong></dt>
+  <dd><%= @metric.idleness %></dd>
+  <dt><strong><%= model_class.human_attribute_name(:updated_at) %>:</strong></dt>
+  <dd><%= @metric.updated_at %></dd>
+  <dt><strong><%= model_class.human_attribute_name(:message) %>:</strong></dt>
+  <dd><pre><%= @metric.message %></pre></dd>
+</dl>
 
-<h1>Metric</h1>
-
-<p>
-  <strong>Client:</strong>  <%= link_to(h(@metric.client.name), client_path(@metric.client)) %><br />
-  <strong>Name:</strong>    <%= h(@metric.name) %><br />
-  <strong>Idleness:</strong> <%= h(@metric.idleness) %><br />
-</p>
-
-<p class="metadata">
-  <strong>Time:</strong> <%= h(@metric.created_at) %><br />
-</p>
-
-<p>
-  <strong>Message:</strong><br />
-  <pre><%= h(@metric.message) %></pre>
-</p>
-
+<div class="form-actions">
+  <%= link_to t('.back', :default => t("helpers.links.back")),
+              metrics_path, :class => 'btn'  %>
+  <%= link_to t('.edit', :default => t("helpers.links.edit")),
+              edit_metric_path(@metric), :class => 'btn' %>
+  <%= link_to t('.destroy', :default => t("helpers.links.destroy")),
+              metric_path(@metric),
+              :method => 'delete',
+              :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
+              :class => 'btn btn-danger' %>
 </div>

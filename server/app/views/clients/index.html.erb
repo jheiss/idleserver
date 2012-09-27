@@ -1,40 +1,46 @@
-<%- @page_title = 'Clients' -%>
+<%- model_class = Client -%>
+<div class="page-header">
+  <h1><%=t '.title', :default => model_class.model_name.human.pluralize %></h1>
+</div>
 
-<%- if @clients.size > 0 -%>
-<table width="100%">
-  <tr>
-    <td><h1>Clients</h1></td>
-    <td align="right">Search by name: <%- form_tag(clients_path, :method => :get) do -%><%= text_field_tag('search[name_like]') %><%- end -%></td>
-  </tr>
+<div class="searchbox">
+  Search by name:
+  <%= search_form_for @q do |f| %>
+    <%= f.text_field :name_cont %>
+  <% end %>
+</div>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th><%= sort_link @q, :name %></th>
+      <th><%= sort_link @q, :idleness %></th>
+      <th><%= sort_link @q, :updated_at %></th>
+      <th><%= sort_link @q, :acknowledged_until %></th>
+      <th><%=t '.actions', :default => t("helpers.actions") %></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @clients.each do |client| %>
+      <tr>
+        <td><%= link_to client.name, client_path(client) %></td>
+        <td><%= client.idleness %></td>
+        <td><%=l client.updated_at %></td>
+        <td><%= client.acknowledged_until %></td>
+        <td>
+          <%= link_to t('.edit', :default => t("helpers.links.edit")),
+                      edit_client_path(client), :class => 'btn btn-mini' %>
+          <%= link_to t('.destroy', :default => t("helpers.links.destroy")),
+                      client_path(client),
+                      :method => :delete,
+                      :confirm => t('.confirm', :default => t("helpers.links.confirm", :default => 'Are you sure?')),
+                      :class => 'btn btn-mini btn-danger' %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
 </table>
 
-<div id="results_table">
-  <%= will_paginate @clients %>
-
-  <table cellspacing="0" class="styled">
-    <thead>
-      <tr>
-        <th nowrap="nowrap" width="5%">&nbsp;</th>
-        <th><%= order @search, :by => :name %></th>
-        <th><%= order @search, :by => :idleness %></th>
-        <th><%= order @search, :by => :updated_at %></th>
-        <th><%= order @search, :by => :acknowledged_until, :as => "Acknowledged" %></th>
-      </tr>
-    </thead>
-    <tbody>
-      <%- @clients.each do |client| -%>
-      <tr class="<%= cycle('odd', 'even') -%>">
-        <td nowrap="nowrap" width="5%"><%= link_to 'View', client_path(client) %>
-        <td><%= h client.name %></td>
-        <td><%= client.idleness %></td>
-        <td><%= client.updated_at %></td>
-        <td><% if !client.acknowledged_until.nil? %>X<% end %>
-      </tr>
-      <%- end -%>
-    </tbody>
-  </table>
-</div> <!-- end results_table div -->
-
-<%- else -%>
-<em>We could not find any results in the system for that search.</em>
-<%- end -%>
+<%= link_to t('.new', :default => t("helpers.links.new")),
+            new_client_path,
+            :class => 'btn btn-primary' %>
