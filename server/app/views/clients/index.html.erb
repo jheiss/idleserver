@@ -26,7 +26,7 @@
         <td><%= link_to client.name, client_path(client) %></td>
         <td><%= client.idleness %></td>
         <td><%=l client.updated_at %></td>
-        <td><%= client.acknowledged_until %></td>
+        <td><%= (client.acknowledged_until && client.acknowledged_until > Time.zone.now) ? l(client.acknowledged_until) : ' ' %></td>
         <td>
           <%= link_to t('.edit', :default => t("helpers.links.edit")),
                       edit_client_path(client), :class => 'btn btn-mini' %>

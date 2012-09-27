@@ -7,15 +7,20 @@
   <dt><strong><%= model_class.human_attribute_name(:name) %>:</strong></dt>
   <dd><%= @client.name %></dd>
   <dt><strong><%= model_class.human_attribute_name(:idleness) %>:</strong></dt>
-  <dd><%= @client.idleness %></dd>
+  <dd><%= @client.idleness ? @client.idleness : '&nbsp;'.html_safe %></dd>
   <dt><strong><%= model_class.human_attribute_name(:created_at) %>:</strong></dt>
   <dd><%= @client.created_at %></dd>
   <dt><strong><%= model_class.human_attribute_name(:updated_at) %>:</strong></dt>
   <dd><%= @client.updated_at %></dd>
-  <dt><strong><%= model_class.human_attribute_name(:acknowledged_at) %>:</strong></dt>
-  <dd><%= @client.acknowledged_at %></dd>
-  <dt><strong><%= model_class.human_attribute_name(:acknowledged_until) %>:</strong></dt>
-  <dd><%= @client.acknowledged_until %></dd>
+  <% if @client.acknowledged_until >= Time.zone.now %>
+    <dt><strong><%= model_class.human_attribute_name(:acknowledged_at) %>:</strong></dt>
+    <dd><%= @client.acknowledged_at %></dd>
+    <dt><strong><%= model_class.human_attribute_name(:acknowledged_until) %>:</strong></dt>
+    <dd><%= @client.acknowledged_until %></dd>
+  <% else %>
+    <dt><strong>Acknowledged:</strong></dt>
+    <dd>no</dd>
+  <% end %>
 </dl>
 
 <div class="accordion" id="metrics_accordion">
