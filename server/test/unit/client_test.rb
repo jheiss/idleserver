@@ -1,6 +1,17 @@
 require 'test_helper'
 
 class ClientTest < ActiveSupport::TestCase
+  test 'has friendly id' do
+    name = 'thing'
+    thing = FactoryGirl.create(:client, name: name)
+    assert_equal name, thing.to_param
+  end
+  test 'friendly id is slugged' do
+    name = 'thing thing'
+    thing = FactoryGirl.create(:client, name: name)
+    assert_equal 'thing-thing', thing.to_param
+  end
+  
   test 'has many metrics' do
     thing = FactoryGirl.create(:client)
     m1 = FactoryGirl.create(:metric, client: thing)
