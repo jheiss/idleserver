@@ -5,7 +5,7 @@ class Client < ActiveRecord::Base
   attr_accessible :name, :idleness, :metrics_attributes,
     :updated_at, :acknowledged_at, :acknowledged_until
   
-  has_many :metrics, :dependent => :destroy
+  has_many :metrics, :inverse_of => :client, :dependent => :destroy
   
   accepts_nested_attributes_for :metrics, :allow_destroy => true
   

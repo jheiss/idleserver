@@ -1,7 +1,7 @@
 class Metric < ActiveRecord::Base
   attr_accessible :name, :idleness, :message
   
-  belongs_to :client
+  belongs_to :client, :inverse_of => :metrics
   
   validates :client, presence: true
   validates :name, presence: true, uniqueness: { :scope => :client_id }
