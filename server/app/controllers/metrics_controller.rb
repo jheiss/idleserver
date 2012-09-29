@@ -3,14 +3,14 @@ require 'set'
 
 class MetricsController < ApplicationController
   # GET /metrics
-  # GET /metrics.xml
   def index
     # Clients requesting XML get no pagination (all entries)
     # FIXME: stream results to XML clients
     per_page = Metric.per_page # will_paginate's default value
     respond_to do |format|
       format.html {}
-      format.xml { per_page = Integer::MAX }
+      format.xml  { per_page = Integer::MAX }
+      format.json { per_page = Integer::MAX }
     end
     
     @q = Metric.search(params[:q])
@@ -19,28 +19,29 @@ class MetricsController < ApplicationController
     respond_to do |format|
       format.html # index.html.erb
       format.xml  { render :xml => @metrics }
+      format.json { render :json => @metrics }
     end
   end
 
   # GET /metrics/1
-  # GET /metrics/1.xml
   def show
     @metric = Metric.find(params[:id])
 
     respond_to do |format|
       format.html # show.html.erb
       format.xml  { render :xml => @metric }
+      format.json { render :json => @metric }
     end
   end
 
   # GET /metrics/new
-  # GET /metrics/new.xml
   def new
     @metric = Metric.new
 
     respond_to do |format|
       format.html # new.html.erb
       format.xml  { render :xml => @metric }
+      format.json { render :json => @metric }
     end
   end
 
@@ -50,7 +51,6 @@ class MetricsController < ApplicationController
   end
 
   # POST /metrics
-  # POST /metrics.xml
   def create
     @metric = Metric.new(params[:metric])
 
@@ -59,15 +59,16 @@ class MetricsController < ApplicationController
         flash[:notice] = 'Metric was successfully created.'
         format.html { redirect_to(@metric) }
         format.xml  { render :xml => @metric, :status => :created, :location => @metric }
+        format.json { render :json => @metric, :status => :created, :location => @metric }
       else
         format.html { render :action => "new" }
         format.xml  { render :xml => @metric.errors, :status => :unprocessable_entity }
+        format.json { render :json => @metric.errors, :status => :unprocessable_entity }
       end
     end
   end
 
   # PUT /metrics/1
-  # PUT /metrics/1.xml
   def update
     @metric = Metric.find(params[:id])
 
@@ -76,15 +77,16 @@ class MetricsController < ApplicationController
         flash[:notice] = 'Metric was successfully updated.'
         format.html { redirect_to(@metric) }
         format.xml  { head :ok }
+        format.json { head :ok }
       else
         format.html { render :action => "edit" }
         format.xml  { render :xml => @metric.errors, :status => :unprocessable_entity }
+        format.json { render :json => @metric.errors, :status => :unprocessable_entity }
       end
     end
   end
 
   # DELETE /metrics/1
-  # DELETE /metrics/1.xml
   def destroy
     @metric = Metric.find(params[:id])
     @metric.destroy
@@ -92,6 +94,7 @@ class MetricsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to(metrics_url) }
       format.xml  { head :ok }
+      format.json { head :ok }
     end
   end
   
@@ -111,6 +114,11 @@ class MetricsController < ApplicationController
         @process_counts[key] ||= Set.new
         @process_counts[key].add(metric.client)
       end
+    end
+    respond_to do |format|
+      format.html # process_report.html.erb
+      format.xml  { render :xml => @process_counts }
+      format.json { render :json => @process_counts }
     end
   end
 end

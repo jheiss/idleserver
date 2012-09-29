@@ -2,15 +2,15 @@ require 'intmax'
 
 class ClientsController < ApplicationController
   # GET /clients
-  # GET /clients.xml
   def index
     # Clients requesting XML or CSV get no pagination (all entries)
     # FIXME: stream results to XML/CSV clients
     per_page = Client.per_page # will_paginate's default value
     respond_to do |format|
       format.html {}
-      format.xml { per_page = Integer::MAX }
-      format.csv { per_page = Integer::MAX }
+      format.xml  { per_page = Integer::MAX }
+      format.json { per_page = Integer::MAX }
+      format.csv  { per_page = Integer::MAX }
     end
     
     @q = Client.search(params[:q])
@@ -19,29 +19,30 @@ class ClientsController < ApplicationController
     respond_to do |format|
       format.html # index.html.erb
       format.xml  { render :xml => @clients }
-      format.csv { @filename = 'idleserver-clients.csv' } # index.csv.csvbuilder
+      format.json { render :json => @clients }
+      format.csv  { @filename = 'idleserver-clients.csv' } # index.csv.csvbuilder
     end
   end
 
   # GET /clients/1
-  # GET /clients/1.xml
   def show
     @client = Client.find(params[:id])
 
     respond_to do |format|
       format.html # show.html.erb
       format.xml  { render :xml => @client }
+      format.json { render :json => @client }
     end
   end
 
   # GET /clients/new
-  # GET /clients/new.xml
   def new
     @client = Client.new
 
     respond_to do |format|
       format.html # new.html.erb
       format.xml  { render :xml => @client }
+      format.json { render :json => @client }
     end
   end
 
@@ -51,7 +52,6 @@ class ClientsController < ApplicationController
   end
 
   # POST /clients
-  # POST /clients.xml
   def create
     @client = Client.new(params[:client])
 
@@ -60,15 +60,16 @@ class ClientsController < ApplicationController
         flash[:notice] = 'Client was successfully created.'
         format.html { redirect_to(@client) }
         format.xml  { render :xml => @client, :status => :created, :location => @client }
+        format.json { render :json => @client, :status => :created, :location => @client }
       else
         format.html { render :action => "new" }
         format.xml  { render :xml => @client.errors, :status => :unprocessable_entity }
+        format.json { render :json => @client.errors, :status => :unprocessable_entity }
       end
     end
   end
 
   # PUT /clients/1
-  # PUT /clients/1.xml
   def update
     @client = Client.find(params[:id])
     
@@ -88,9 +89,11 @@ class ClientsController < ApplicationController
         flash[:notice] = 'Client was successfully updated.'
         format.html { redirect_to(@client) }
         format.xml  { head :ok }
+        format.json { head :ok }
       else
         format.html { render :action => "edit" }
         format.xml  { render :xml => @client.errors, :status => :unprocessable_entity }
+        format.json { render :json => @client.errors, :status => :unprocessable_entity }
       end
     end
   end
@@ -117,6 +120,7 @@ class ClientsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to(clients_url) }
       format.xml  { head :ok }
+      format.json { head :ok }
     end
   end
 end
