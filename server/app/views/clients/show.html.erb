@@ -12,7 +12,7 @@
   <dd><%= @client.created_at %></dd>
   <dt><strong><%= model_class.human_attribute_name(:updated_at) %>:</strong></dt>
   <dd><%= @client.updated_at %></dd>
-  <% if @client.acknowledged_until >= Time.zone.now %>
+  <% if @client.acknowledged_until && @client.acknowledged_until >= Time.zone.now %>
     <dt><strong><%= model_class.human_attribute_name(:acknowledged_at) %>:</strong></dt>
     <dd><%= @client.acknowledged_at %></dd>
     <dt><strong><%= model_class.human_attribute_name(:acknowledged_until) %>:</strong></dt>
