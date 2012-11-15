@@ -13,9 +13,9 @@
     <% # two element arrays having a key and value from @process_counts. %>
     <% # For extra confusion, the keys of @process_counts are themselves %>
     <% # two element arrays of username and command. %>
-    <%- @process_counts.sort_by{|key, value| value.size }.each do |key, value| -%>
+    <%- @process_counts.sort_by{|key, value| value.size }.reverse.each do |key, value| -%>
     <tr>
-      <td><%= key[:name] %></td>
+      <td><%= key[:user] %></td>
       <td><%= key[:command] %></td>
       <% # Link to the clients using a search so that users can see the %>
       <% # hostname on mouse over.  That can be handy when scanning the %>
