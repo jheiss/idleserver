@@ -17,6 +17,7 @@
       <th><%= sort_link @q, :idleness %></th>
       <th><%= sort_link @q, :updated_at %></th>
       <th><%= sort_link @q, :acknowledged_until %></th>
+      <th><%= sort_link @q, :ack_count %></th>
       <th><%=t '.actions', :default => t("helpers.actions") %></th>
     </tr>
   </thead>
@@ -27,6 +28,7 @@
         <td><%= client.idleness %></td>
         <td><%=l client.updated_at %></td>
         <td><%= (client.acknowledged_until && client.acknowledged_until > Time.zone.now) ? l(client.acknowledged_until) : ' ' %></td>
+        <td><%= client.ack_count %></td>
         <td>
           <%= link_to t('.edit', :default => t("helpers.links.edit")),
                       edit_client_path(client), :class => 'btn btn-mini' %>

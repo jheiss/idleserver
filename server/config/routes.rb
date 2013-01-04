@@ -1,7 +1,9 @@
 IdleServer::Application.routes.draw do
   resources :clients do
     member do
-      post 'ack'
+      get 'ack'
+      put 'ackcreate'
+      put 'del'
     end
   end
   resources :metrics do

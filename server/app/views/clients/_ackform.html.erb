@@ -1,0 +1,19 @@
+<%= simple_form_for @client, :url =>  {action: "ackcreate" }, :html => { :class => 'form-horizontal' } do |c| %>
+  <%= c.error_notification %>
+  
+  <div class="form-inputs">
+    Client: <%= @client.name %>
+    <%= label_tag(:user, "Username:") %>
+    <%= text_field_tag(:user, @current_user) %>
+    <%= label_tag(:note, "Explain why you still need the host:") %>
+    <%= text_area_tag(:note) %>
+    <%= label_tag(:acknowledged_until, "Acknowledged Until:") %>
+    <%= text_field_tag(:acknowledged_until, 30.days.from_now ) %>
+  </div>
+  
+  <div class="form-actions">
+    <%= c.submit nil, :class => 'btn btn-primary' %>
+    <%= link_to t('.cancel', :default => t("helpers.links.cancel")),
+                clients_path, :class => 'btn' %>
+  </div>
+<% end %>

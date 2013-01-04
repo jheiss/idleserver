@@ -21,6 +21,32 @@
     <dt><strong>Acknowledged:</strong></dt>
     <dd>no</dd>
   <% end %>
+  <% if @client.acknowledgements.count > 0 %>
+    <dt><strong># of Acks:</strong></dt>
+    <dd><%= @client.acknowledgements.count %></dd>
+ 
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Acknowledged at</th>
+          <th>Acknowledged until</th>
+          <th>Reason for acknowledgement</th>
+        </tr>
+      </thead>
+      <tbody>
+      <% @client.acknowledgements.each do |ack| %>
+        <tr>
+          <td><%= ack.user %></td>
+          <td><%= ack.acknowledged_at %></td>
+          <td><%= ack.acknowledged_until %></td>
+          <td><%= ack.note %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% end %>
 </dl>
 
 <div class="accordion" id="metrics_accordion">
@@ -56,9 +82,7 @@
               edit_client_path(@client), :class => 'btn' %>
   <%= link_to 'Acknowledge',
               ack_client_path(@client),
-              :method => :post,
-              :confirm => 'Are you sure?',
-              :class => 'btn btn-danger' %>
+              :class => 'btn' %>
   <%= link_to t('.destroy', :default => t("helpers.links.destroy")),
               client_path(@client),
               :method => 'delete',

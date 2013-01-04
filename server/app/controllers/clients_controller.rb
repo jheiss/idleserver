@@ -100,16 +100,37 @@ class ClientsController < ApplicationController
 
   def ack
     @client = Client.find(params[:id])
-    if @client.update_attributes(
-        idleness: 0,
-        acknowledged_at: Time.zone.now,
-        acknowledged_until: 30.days.from_now)
-      flash[:notice] = 'Client was successfully acknowledged.'
-    else
-      flash[:error] = 'Acknowledgement failed.'
-    end
-    redirect_to :action => :index
+    @current_user = ""
   end
+
+  def ackcreate
+        @client = Client.find(params[:id])
+        @current_user = params[:user] || ""
+        if params[:user].blank? || params[:note].blank? || params[:acknowledged_until].blank?
+                flash[:error] = 'All fields are compulsory.'
+        else
+     if @client.update_attributes(
+             idleness: 0,
+             acknowledged_at: Time.zone.now,
+             acknowledged_until: 30.days.from_now)
+
+             @acknowledgements = @client.acknowledgements.build(
+             acknowledged_at: Time.zone.now,
+             acknowledged_until: params[:acknowledged_until],
+             user: @current_user,
+             note: params[:note]
+             )
+             @acknowledgements.save
+            @client.update_attributes(
+            ack_count: @client.acknowledgements.count
+            )
+           flash[:notice] = 'Client was successfully acknowledged.'
+         else
+           flash[:error] = 'Acknowledgement failed.'
+         end
+         end
+         redirect_to(@client)
+ end
 
   # DELETE /clients/1
   # DELETE /clients/1.xml

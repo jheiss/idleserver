@@ -49,3 +49,5 @@ gem 'simple_form'
 group :test do
   gem 'factory_girl_rails'
 end
+
+gem 'rubycas-client'
