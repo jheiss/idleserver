@@ -6,6 +6,7 @@ class ClientsControllerTest < ActionController::TestCase
   end
   
   test "should get index" do
+    # FIXME: test search and pagination
     get :index
     assert_response :success
     assert_not_nil assigns(:clients)
